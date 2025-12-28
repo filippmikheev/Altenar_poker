@@ -2220,6 +2220,165 @@ io.on('connection', (socket) => {
     socket.emit('slots-state', game.getGameState());
   });
 
+  // ====== КАМЕНЬ-НОЖНИЦЫ-БУМАГА ======
+  socket.on('rps-join', (data) => {
+    const { playerName } = data;
+    if (!playerName) {
+      socket.emit('rps-error', 'Введите ваше имя');
+      return;
+    }
+    
+    let game = rpsGames.get(socket.id);
+    if (!game) {
+      game = new RPSGame(socket.id, playerName);
+      rpsGames.set(socket.id, game);
+    }
+    
+    socket.emit('rps-state', game.getGameState());
+  });
+
+  socket.on('rps-bet', (data) => {
+    const { amount } = data;
+    const game = rpsGames.get(socket.id);
+    
+    if (!game) {
+      socket.emit('rps-error', 'Игра не найдена');
+      return;
+    }
+    
+    if (game.placeBet(amount)) {
+      socket.emit('rps-state', game.getGameState());
+    } else {
+      socket.emit('rps-error', 'Неверная ставка');
+    }
+  });
+
+  socket.on('rps-choice', (data) => {
+    const { choice } = data;
+    const game = rpsGames.get(socket.id);
+    
+    if (!game) {
+      socket.emit('rps-error', 'Игра не найдена');
+      return;
+    }
+    
+    if (game.makeChoice(choice)) {
+      socket.emit('rps-state', game.getGameState());
+    } else {
+      socket.emit('rps-error', 'Неверный выбор');
+    }
+  });
+
+  socket.on('rps-new-game', () => {
+    const game = rpsGames.get(socket.id);
+    if (!game) {
+      socket.emit('rps-error', 'Игра не найдена');
+      return;
+    }
+    
+    game.newGame();
+    socket.emit('rps-state', game.getGameState());
+  });
+
+  // ====== BLACK JACK МУЛЬТИПЛЕЕР ======
+  socket.on('blackjack-multi-create', (roomId) => {
+    if (!blackjackRooms.has(roomId)) {
+      blackjackRooms.set(roomId, new BlackJackMultiplayerGame(roomId, socket.id));
+      io.emit('blackjack-multi-rooms', getBlackJackRoomsList());
+    }
+    socket.join(roomId);
+    socket.emit('blackjack-multi-joined', roomId);
+  });
+
+  socket.on('blackjack-multi-join', (data) => {
+    const { roomId, playerName } = data;
+    const game = blackjackRooms.get(roomId);
+    
+    if (!game) {
+      socket.emit('blackjack-multi-error', 'Комната не найдена');
+      return;
+    }
+    
+    if (game.addPlayer(socket.id, playerName)) {
+      socket.join(roomId);
+      socket.emit('blackjack-multi-joined', roomId);
+      io.to(roomId).emit('blackjack-multi-state', game.getGameState());
+      io.emit('blackjack-multi-rooms', getBlackJackRoomsList());
+    } else {
+      socket.emit('blackjack-multi-error', 'Не удалось присоединиться');
+    }
+  });
+
+  socket.on('blackjack-multi-add-bot', (roomId) => {
+    const game = blackjackRooms.get(roomId);
+    if (!game) {
+      socket.emit('blackjack-multi-error', 'Комната не найдена');
+      return;
+    }
+    
+    if (game.addBot()) {
+      io.to(roomId).emit('blackjack-multi-state', game.getGameState());
+      io.emit('blackjack-multi-rooms', getBlackJackRoomsList());
+    }
+  });
+
+  socket.on('blackjack-multi-bet', (data) => {
+    const { roomId, amount } = data;
+    const game = blackjackRooms.get(roomId);
+    
+    if (!game) {
+      socket.emit('blackjack-multi-error', 'Комната не найдена');
+      return;
+    }
+    
+    if (game.placeBet(socket.id, amount)) {
+      io.to(roomId).emit('blackjack-multi-state', game.getGameState());
+    }
+  });
+
+  socket.on('blackjack-multi-action', (data) => {
+    const { roomId, action } = data;
+    const game = blackjackRooms.get(roomId);
+    
+    if (!game) {
+      socket.emit('blackjack-multi-error', 'Комната не найдена');
+      return;
+    }
+    
+    if (game.playerAction(socket.id, action)) {
+      io.to(roomId).emit('blackjack-multi-state', game.getGameState());
+    }
+  });
+
+  socket.on('blackjack-multi-start', (roomId) => {
+    const game = blackjackRooms.get(roomId);
+    if (!game) return;
+    
+    if (game.startGame()) {
+      io.to(roomId).emit('blackjack-multi-state', game.getGameState());
+    }
+  });
+
+  socket.on('blackjack-multi-new-game', (roomId) => {
+    const game = blackjackRooms.get(roomId);
+    if (!game) return;
+    
+    game.newGame();
+    io.to(roomId).emit('blackjack-multi-state', game.getGameState());
+  });
+
+  socket.on('blackjack-multi-get-rooms', () => {
+    socket.emit('blackjack-multi-rooms', getBlackJackRoomsList());
+  });
+
+  function getBlackJackRoomsList() {
+    return Array.from(blackjackRooms.entries()).map(([roomId, game]) => ({
+      roomId,
+      players: game.players.length,
+      state: game.state
+    }));
+  }
+
   // Закрытие комнаты (только админ)
   socket.on('closeRoom', (roomId) => {
     const game = rooms.get(roomId);
