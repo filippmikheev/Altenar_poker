@@ -55,28 +55,37 @@ socket.on('coinflip-error', (message) => {
 function updateDisplay() {
     if (!gameState) return;
     
-    balanceEl.textContent = gameState.balance;
+    if (balanceEl) {
+        balanceEl.textContent = gameState.balance;
+    }
     
     if (gameState.state === 'betting') {
-        betSection.style.display = 'block';
-        choiceSection.style.display = 'none';
-        resultSection.style.display = 'none';
-        coinEl.classList.remove('flipping', 'heads-result', 'tails-result');
-        coinResultEl.textContent = '';
+        if (betSection) betSection.style.display = 'block';
+        if (choiceSection) choiceSection.style.display = 'none';
+        if (resultSection) resultSection.style.display = 'none';
+        if (coinEl) {
+            coinEl.classList.remove('flipping', 'heads-result', 'tails-result');
+        }
+        if (coinResultEl) coinResultEl.textContent = '';
     } else if (gameState.state === 'flipping') {
-        betSection.style.display = 'none';
-        choiceSection.style.display = 'none';
-        resultSection.style.display = 'none';
-        coinEl.classList.add('flipping');
+        if (betSection) betSection.style.display = 'none';
+        if (choiceSection) choiceSection.style.display = 'none';
+        if (resultSection) resultSection.style.display = 'none';
+        if (coinEl) {
+            coinEl.classList.remove('heads-result', 'tails-result');
+            coinEl.classList.add('flipping');
+        }
     } else if (gameState.state === 'finished') {
-        betSection.style.display = 'none';
-        choiceSection.style.display = 'none';
-        resultSection.style.display = 'block';
+        if (betSection) betSection.style.display = 'none';
+        if (choiceSection) choiceSection.style.display = 'none';
+        if (resultSection) resultSection.style.display = 'block';
         
         // Показываем результат
         const result = gameState.result;
-        coinEl.classList.remove('flipping');
-        coinEl.classList.add(result === 'heads' ? 'heads-result' : 'tails-result');
+        if (coinEl) {
+            coinEl.classList.remove('flipping');
+            coinEl.classList.add(result === 'heads' ? 'heads-result' : 'tails-result');
+        }
         
         let message = '';
         let winningsText = '';
@@ -89,9 +98,11 @@ function updateDisplay() {
             winningsText = `Потеряно: ${gameState.bet}`;
         }
         
-        coinResultEl.textContent = result === 'heads' ? '🪙 Орел' : '🪙 Решка';
-        resultMessageEl.textContent = message;
-        winningsDisplayEl.textContent = winningsText;
+        if (coinResultEl) {
+            coinResultEl.textContent = result === 'heads' ? '🪙 Орел' : '🪙 Решка';
+        }
+        if (resultMessageEl) resultMessageEl.textContent = message;
+        if (winningsDisplayEl) winningsDisplayEl.textContent = winningsText;
     }
 }
 

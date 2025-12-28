@@ -2193,23 +2193,26 @@ io.on('connection', (socket) => {
     }
     
     if (game.placeBet(amount, choice)) {
-      // Обновляем баланс фишек
+      // Обновляем баланс фишек после ставки
       const chipsData = playerChips.get(socket.id);
       if (chipsData) {
         chipsData.balance = game.balance;
       }
-      // Отправляем состояние сразу
+      // Отправляем состояние "flipping" сразу
       socket.emit('coinflip-state', game.getGameState());
       socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
       
-      // Отправляем результат после подбрасывания
+      // Подбрасываем монетку через небольшую задержку для анимации
       setTimeout(() => {
-        // Обновляем баланс после результата
-        if (chipsData) {
-          chipsData.balance = game.balance;
+        if (game.flipCoin()) {
+          // Обновляем баланс фишек после результата
+          if (chipsData) {
+            chipsData.balance = game.balance;
+          }
+          // Отправляем финальное состояние
+          socket.emit('coinflip-state', game.getGameState());
+          socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
         }
-        socket.emit('coinflip-state', game.getGameState());
-        socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
       }, 2000);
     } else {
       socket.emit('coinflip-error', 'Неверная ставка');

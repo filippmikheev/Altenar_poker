@@ -22,16 +22,13 @@ class CoinFlipGame {
     this.balance -= amount;
     this.state = 'flipping';
     
-    // Подбрасываем монетку
-    setTimeout(() => {
-      this.flipCoin();
-    }, 100);
-    
     return true;
   }
 
-  // Подбрасывание монетки
+  // Подбрасывание монетки (вызывается отдельно)
   flipCoin() {
+    if (this.state !== 'flipping') return false;
+    
     // Случайный результат: 0 = орел (heads), 1 = решка (tails)
     const random = Math.random();
     this.result = random < 0.5 ? 'heads' : 'tails';
@@ -47,6 +44,8 @@ class CoinFlipGame {
       // Проигрыш
       this.winnings = 0;
     }
+    
+    return true;
   }
 
   // Новая игра
