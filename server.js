@@ -2009,6 +2009,87 @@ io.on('connection', (socket) => {
     });
   }, 1000);
 
+  // ====== BLACK JACK ======
+  socket.on('blackjack-join', (data) => {
+    const { playerName } = data;
+    if (!playerName) {
+      socket.emit('blackjack-error', 'Введите ваше имя');
+      return;
+    }
+    
+    // Создаем или получаем игру
+    let game = blackjackGames.get(socket.id);
+    if (!game) {
+      game = new BlackJackGame(socket.id, playerName);
+      blackjackGames.set(socket.id, game);
+    }
+    
+    socket.emit('blackjack-state', game.getGameState());
+  });
+
+  socket.on('blackjack-bet', (data) => {
+    const { amount } = data;
+    const game = blackjackGames.get(socket.id);
+    
+    if (!game) {
+      socket.emit('blackjack-error', 'Игра не найдена');
+      return;
+    }
+    
+    if (game.placeBet(amount)) {
+      socket.emit('blackjack-state', game.getGameState());
+    } else {
+      socket.emit('blackjack-error', 'Неверная ставка');
+    }
+  });
+
+  socket.on('blackjack-hit', () => {
+    const game = blackjackGames.get(socket.id);
+    if (!game) {
+      socket.emit('blackjack-error', 'Игра не найдена');
+      return;
+    }
+    
+    game.hit();
+    socket.emit('blackjack-state', game.getGameState());
+  });
+
+  socket.on('blackjack-stand', () => {
+    const game = blackjackGames.get(socket.id);
+    if (!game) {
+      socket.emit('blackjack-error', 'Игра не найдена');
+      return;
+    }
+    
+    game.stand();
+    socket.emit('blackjack-state', game.getGameState());
+  });
+
+  socket.on('blackjack-double', () => {
+    const game = blackjackGames.get(socket.id);
+    if (!game) {
+      socket.emit('blackjack-error', 'Игра не найдена');
+      return;
+    }
+    
+    if (game.doubleDown()) {
+      socket.emit('blackjack-state', game.getGameState());
+    } else {
+      socket.emit('blackjack-error', 'Нельзя удвоить ставку');
+    }
+  });
+
+  socket.on('blackjack-new-game', () => {
+    const game = blackjackGames.get(socket.id);
+    if (!game) {
+      socket.emit('blackjack-error', 'Игра не найдена');
+      return;
+    }
+    
+    game.newGame();
+    socket.emit('blackjack-state', game.getGameState());
+  });
+
   // Закрытие комнаты (только админ)
   socket.on('closeRoom', (roomId) => {
     const game = rooms.get(roomId);
