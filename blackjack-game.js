@@ -95,19 +95,29 @@ class BlackJackGame {
 
   // Подсчет очков с учетом тузов
   calculateScore(cards) {
+    if (!cards || cards.length === 0) return 0;
+    
     let score = 0;
     let aces = 0;
     
     for (let card of cards) {
-      if (card.rank === 'A') {
+      if (card && card.rank === 'A') {
         aces++;
         score += 11;
-      } else {
-        score += card.value;
+      } else if (card) {
+        // Используем правильное значение карты
+        if (['J', 'Q', 'K'].includes(card.rank)) {
+          score += 10;
+        } else if (card.rank === 'A') {
+          aces++;
+          score += 11;
+        } else {
+          score += card.value || parseInt(card.rank) || 0;
+        }
       }
     }
     
-    // Если перебор и есть тузы, уменьшаем их значение
+    // Если перебор и есть тузы, уменьшаем их значение (11 -> 1)
     while (score > 21 && aces > 0) {
       score -= 10;
       aces--;

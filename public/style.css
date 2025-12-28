@@ -1818,6 +1818,11 @@ body {
     font-weight: 700;
     color: var(--gold);
     margin-bottom: 15px;
+    min-height: 1.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.3s;
 }
 
 .cards-container {
@@ -1981,20 +1986,173 @@ body {
 @media (max-width: 768px) {
     .blackjack-container {
         padding: 10px;
+        gap: 15px;
     }
     
     .blackjack-header {
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: wrap;
         gap: 10px;
+        padding: 12px 15px;
+        justify-content: space-between;
     }
     
     .blackjack-header h1 {
-        font-size: 1.5em;
+        font-size: 1.3em;
+        flex: 1;
+        min-width: 120px;
+    }
+    
+    .back-btn {
+        padding: 6px 12px;
+        font-size: 0.85em;
+    }
+    
+    .balance-display {
+        font-size: 1em;
+    }
+    
+    .dealer-section,
+    .player-section {
+        padding: 15px;
+    }
+    
+    .dealer-label,
+    .player-label {
+        font-size: 1em;
+        margin-bottom: 8px;
+    }
+    
+    .dealer-score,
+    .player-score {
+        font-size: 1.3em;
+        margin-bottom: 12px;
+    }
+    
+    .cards-container {
+        gap: 8px;
+        min-height: 80px;
     }
     
     .cards-container .card {
-        width: 55px;
-        height: 77px;
+        width: 50px;
+        height: 70px;
+        font-size: 0.7em;
+    }
+    
+    .bet-section {
+        padding: 15px;
+    }
+    
+    .bet-section h3 {
+        font-size: 1em;
+        margin-bottom: 12px;
+    }
+    
+    .bet-amounts {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    
+    .bet-btn {
+        padding: 10px;
+        font-size: 0.9em;
+        min-height: 44px;
+    }
+    
+    .custom-bet {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .custom-bet input {
+        width: 100%;
+        padding: 10px;
+        font-size: 0.9em;
+        min-height: 44px;
+    }
+    
+    .custom-bet button {
+        width: 100%;
+    }
+    
+    .current-bet {
+        font-size: 1em;
+        margin-top: 12px;
+    }
+    
+    .actions-section {
+        flex-direction: row;
+        gap: 10px;
+        padding: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .action-btn-blackjack {
+        flex: 1;
+        min-width: calc(33.333% - 7px);
+        padding: 12px 15px;
+        font-size: 0.95em;
+        min-height: 50px;
+    }
+    
+    .action-btn-blackjack.double {
+        min-width: 100%;
+        margin-top: 5px;
+    }
+    
+    .result-section {
+        padding: 20px 15px;
+    }
+    
+    .result-message {
+        font-size: 1.5em;
+        margin-bottom: 12px;
+    }
+    
+    .winnings {
+        font-size: 1.1em;
+        margin-bottom: 15px;
+    }
+    
+    .action-btn-blackjack.new-game {
+        min-height: 50px;
+        font-size: 1em;
+    }
+    
+    .games-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .game-card {
+        padding: 20px;
+    }
+    
+    .game-icon {
+        font-size: 4em;
+    }
+    
+    .game-card h2 {
+        font-size: 1.5em;
+    }
+}
+
+@media (max-width: 480px) {
+    .blackjack-container {
+        padding: 8px;
+        gap: 12px;
+    }
+    
+    .blackjack-header h1 {
+        font-size: 1.2em;
+    }
+    
+    .cards-container .card {
+        width: 45px;
+        height: 63px;
+        font-size: 0.65em;
     }
     
     .bet-amounts {
@@ -2007,9 +2165,10 @@ body {
     
     .action-btn-blackjack {
         width: 100%;
+        min-width: 100%;
     }
     
-    .games-grid {
-        grid-template-columns: 1fr;
+    .action-btn-blackjack.double {
+        margin-top: 0;
     }
 }

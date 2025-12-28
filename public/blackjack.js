@@ -45,7 +45,17 @@ socket.on('blackjack-state', (state) => {
 });
 
 socket.on('blackjack-error', (message) => {
-    alert(message);
+    // Показываем ошибку более красиво
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #e74c3c; color: white; padding: 15px 25px; border-radius: 10px; z-index: 10000; box-shadow: 0 5px 20px rgba(0,0,0,0.3);';
+    errorDiv.textContent = message;
+    document.body.appendChild(errorDiv);
+    
+    setTimeout(() => {
+        errorDiv.style.transition = 'opacity 0.3s';
+        errorDiv.style.opacity = '0';
+        setTimeout(() => errorDiv.remove(), 300);
+    }, 3000);
 });
 
 // Обновление отображения
@@ -64,10 +74,17 @@ function updateDisplay() {
                 const cardEl = document.createElement('div');
                 cardEl.className = 'card card-back';
                 cardEl.innerHTML = '<div class="card-back-pattern">🂠</div>';
+                cardEl.style.opacity = '0';
+                cardEl.style.transform = 'scale(0.8)';
                 dealerCardsEl.appendChild(cardEl);
+                setTimeout(() => {
+                    cardEl.style.transition = 'all 0.3s ease';
+                    cardEl.style.opacity = '1';
+                    cardEl.style.transform = 'scale(1)';
+                }, 10);
             } else {
                 const cardEl = createCardElement(card);
-                dealerCardsEl.appendChild(cardEl);
+                if (cardEl) dealerCardsEl.appendChild(cardEl);
             }
         });
     }
@@ -75,15 +92,43 @@ function updateDisplay() {
     // Карты игрока
     playerCardsEl.innerHTML = '';
     if (gameState.playerCards) {
-        gameState.playerCards.forEach(card => {
+        gameState.playerCards.forEach((card, index) => {
             const cardEl = createCardElement(card);
-            playerCardsEl.appendChild(cardEl);
+            if (cardEl) {
+                // Задержка для анимации каждой карты
+                cardEl.style.transitionDelay = `${index * 0.1}s`;
+                playerCardsEl.appendChild(cardEl);
+            }
         });
     }
     
     // Очки
-    playerScoreEl.textContent = gameState.playerScore || 0;
-    dealerScoreEl.textContent = gameState.dealerHidden ? '?' : (gameState.dealerScore || 0);
+    const playerScore = gameState.playerScore || 0;
+    const dealerScore = gameState.dealerHidden ? null : (gameState.dealerScore || 0);
+    
+    playerScoreEl.textContent = playerScore;
+    if (playerScore > 21) {
+        playerScoreEl.textContent = `${playerScore} (Перебор!)`;
+        playerScoreEl.style.color = '#e74c3c';
+    } else if (playerScore === 21 && gameState.playerCards && gameState.playerCards.length === 2) {
+        playerScoreEl.textContent = `${playerScore} (Black Jack!)`;
+        playerScoreEl.style.color = '#f39c12';
+    } else {
+        playerScoreEl.style.color = 'var(--gold)';
+    }
+    
+    if (dealerScore !== null) {
+        dealerScoreEl.textContent = dealerScore;
+        if (dealerScore > 21) {
+            dealerScoreEl.textContent = `${dealerScore} (Перебор!)`;
+            dealerScoreEl.style.color = '#e74c3c';
+        } else {
+            dealerScoreEl.style.color = 'var(--gold)';
+        }
+    } else {
+        dealerScoreEl.textContent = '?';
+        dealerScoreEl.style.color = 'var(--gold)';
+    }
     
     // Отображение секций в зависимости от состояния
     if (gameState.state === 'betting') {
