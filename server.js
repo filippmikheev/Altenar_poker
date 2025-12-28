@@ -674,8 +674,8 @@ class PokerGame {
     // Получаем или создаем данные игрока
     let playerData = playersData.get(playerName);
     if (!playerData) {
-      // Создаем нового игрока с начальными фишками (не админ по умолчанию)
-      playerData = { chips: INITIAL_CHIPS, socketId: playerId, isAdmin: false };
+      // Создаем нового игрока с начальными фишками (не админ по умолчанию, докупка разрешена)
+      playerData = { chips: INITIAL_CHIPS, socketId: playerId, isAdmin: false, canBuyIn: true };
       playersData.set(playerName, playerData);
     } else {
       // Обновляем socketId для существующего игрока
@@ -2255,6 +2255,16 @@ io.on('connection', (socket) => {
     rooms.forEach((game, roomId) => {
       const player = game.players.find(p => p.id === socket.id);
       if (player) {
+        // Сохраняем баланс игрока ПЕРЕД любыми изменениями
+        const playerName = player.name;
+        const playerData = playersData.get(playerName);
+        if (playerData) {
+          // Сохраняем текущий баланс игрока (с учетом выигрышей/проигрышей)
+          playerData.chips = player.chips;
+          playerData.socketId = null; // Игрок отключился, но баланс сохраняется
+          console.log(`✅ Баланс игрока ${playerName} сохранен: ${playerData.chips} фишек`);
+        }
+        
         // Если игрок отключился во время игры, он автоматически пасует
         if (game.state !== 'waiting' && game.state !== 'showdown' && !player.folded) {
           player.folded = true;
