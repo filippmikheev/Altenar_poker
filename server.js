@@ -38,6 +38,21 @@ app.get('/blackjack', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'blackjack.html'));
 });
 
+// Роут для покера (старая страница)
+app.get('/poker', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'poker.html'));
+});
+
+// Роут для Монетки
+app.get('/coinflip', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'coinflip.html'));
+});
+
+// Роут для Слот-машины
+app.get('/slots', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'slots.html'));
+});
+
 // API для управления сервером
 app.get('/api/status', (req, res) => {
     // Проверяем, запущен ли основной сервер (этот процесс)
@@ -2090,6 +2105,106 @@ io.on('connection', (socket) => {
     socket.emit('blackjack-state', game.getGameState());
   });
 
+  // ====== МОНЕТКА ======
+  socket.on('coinflip-join', (data) => {
+    const { playerName } = data;
+    if (!playerName) {
+      socket.emit('coinflip-error', 'Введите ваше имя');
+      return;
+    }
+    
+    let game = coinflipGames.get(socket.id);
+    if (!game) {
+      game = new CoinFlipGame(socket.id, playerName);
+      coinflipGames.set(socket.id, game);
+    }
+    
+    socket.emit('coinflip-state', game.getGameState());
+  });
+
+  socket.on('coinflip-bet', (data) => {
+    const { amount, choice } = data;
+    const game = coinflipGames.get(socket.id);
+    
+    if (!game) {
+      socket.emit('coinflip-error', 'Игра не найдена');
+      return;
+    }
+    
+    if (game.placeBet(amount, choice)) {
+      // Отправляем состояние сразу
+      socket.emit('coinflip-state', game.getGameState());
+      
+      // Отправляем результат после подбрасывания
+      setTimeout(() => {
+        socket.emit('coinflip-state', game.getGameState());
+      }, 2000);
+    } else {
+      socket.emit('coinflip-error', 'Неверная ставка');
+    }
+  });
+
+  socket.on('coinflip-new-game', () => {
+    const game = coinflipGames.get(socket.id);
+    if (!game) {
+      socket.emit('coinflip-error', 'Игра не найдена');
+      return;
+    }
+    
+    game.newGame();
+    socket.emit('coinflip-state', game.getGameState());
+  });
+
+  // ====== СЛОТ-МАШИНА ======
+  socket.on('slots-join', (data) => {
+    const { playerName } = data;
+    if (!playerName) {
+      socket.emit('slots-error', 'Введите ваше имя');
+      return;
+    }
+    
+    let game = slotsGames.get(socket.id);
+    if (!game) {
+      game = new SlotsGame(socket.id, playerName);
+      slotsGames.set(socket.id, game);
+    }
+    
+    socket.emit('slots-state', game.getGameState());
+  });
+
+  socket.on('slots-bet', (data) => {
+    const { amount } = data;
+    const game = slotsGames.get(socket.id);
+    
+    if (!game) {
+      socket.emit('slots-error', 'Игра не найдена');
+      return;
+    }
+    
+    if (game.placeBet(amount)) {
+      // Отправляем состояние сразу (spinning)
+      socket.emit('slots-state', game.getGameState());
+      
+      // Отправляем результат после кручения
+      setTimeout(() => {
+        socket.emit('slots-state', game.getGameState());
+      }, 3000);
+    } else {
+      socket.emit('slots-error', 'Неверная ставка');
+    }
+  });
+
+  socket.on('slots-new-game', () => {
+    const game = slotsGames.get(socket.id);
+    if (!game) {
+      socket.emit('slots-error', 'Игра не найдена');
+      return;
+    }
+    
+    game.newGame();
+    socket.emit('slots-state', game.getGameState());
+  });
+
   // Закрытие комнаты (только админ)
   socket.on('closeRoom', (roomId) => {
     const game = rooms.get(roomId);
@@ -2125,8 +2240,10 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('Player disconnected:', socket.id);
     
-    // Удаляем игру Black Jack при отключении
+    // Удаляем игры при отключении
     blackjackGames.delete(socket.id);
+    coinflipGames.delete(socket.id);
+    slotsGames.delete(socket.id);
     
     rooms.forEach((game, roomId) => {
       const player = game.players.find(p => p.id === socket.id);
