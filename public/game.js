@@ -46,6 +46,13 @@ const timerDisplay = document.getElementById('timerDisplay');
 const timeLeftSpan = document.getElementById('timeLeft');
 const playerBuyIn = document.getElementById('playerBuyIn');
 const playerProfit = document.getElementById('playerProfit');
+// Компактные элементы
+const playerChipsCompact = document.getElementById('playerChipsCompact');
+const playerBetCompact = document.getElementById('playerBetCompact');
+const playerProfitCompact = document.getElementById('playerProfitCompact');
+// Сворачиваемая таблица лидеров
+const leaderboardHeader = document.getElementById('leaderboardHeader');
+const leaderboardContent = document.getElementById('leaderboardContent');
 const buyInControls = document.getElementById('buyInControls');
 const buyInAmountInput = document.getElementById('buyInAmount');
 const buyChipsBtn = document.getElementById('buyChipsBtn');
@@ -810,6 +817,10 @@ function updateGameDisplay() {
         if (playerChips) playerChips.textContent = myPlayer.chips || 0;
         if (playerBet) playerBet.textContent = myPlayer.bet || 0;
         
+        // Обновляем компактные элементы
+        if (playerChipsCompact) playerChipsCompact.textContent = myPlayer.chips || 0;
+        if (playerBetCompact) playerBetCompact.textContent = myPlayer.bet || 0;
+        
         // Статистика
         if (myPlayer.totalBuyIn !== undefined) {
             if (playerBuyIn) playerBuyIn.textContent = myPlayer.totalBuyIn;
@@ -817,6 +828,10 @@ function updateGameDisplay() {
             if (playerProfit) {
                 playerProfit.textContent = profit >= 0 ? `+${profit}` : `${profit}`;
                 playerProfit.style.color = profit >= 0 ? '#4caf50' : '#f44336';
+            }
+            if (playerProfitCompact) {
+                playerProfitCompact.textContent = profit >= 0 ? `+${profit}` : `${profit}`;
+                playerProfitCompact.style.color = profit >= 0 ? '#4caf50' : '#f44336';
             }
         }
 

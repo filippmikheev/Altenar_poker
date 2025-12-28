@@ -74,41 +74,44 @@
             <!-- ВАШИ КАРТЫ -->
             <div class="player-hand" id="playerHand"></div>
 
-            <!-- ПАНЕЛЬ ДЕЙСТВИЙ -->
-            <div class="action-panel" id="actionPanel">
-                <div class="player-info">
-                    <div class="info-row">
-                        <span>💰 Ваши фишки:</span>
-                        <span id="playerChips">1000</span>
-                    </div>
-                    <div class="info-row">
-                        <span>🎯 Ваша ставка:</span>
-                        <span id="playerBet">0</span>
-                    </div>
-                    <div class="info-row">
-                        <span>💵 Куплено:</span>
-                        <span id="playerBuyIn">1000</span>
-                    </div>
-                    <div class="info-row">
-                        <span>📊 Прибыль:</span>
-                        <span id="playerProfit">0</span>
-                    </div>
+            <!-- КОМПАКТНАЯ ИНФОРМАЦИЯ ОБ ИГРОКЕ -->
+            <div class="player-info-compact" id="playerInfoCompact">
+                <div class="info-item">
+                    <span class="info-label">💰</span>
+                    <span class="info-value" id="playerChipsCompact">1000</span>
                 </div>
-                <div class="actions">
-                    <button id="foldBtn" class="action-btn fold" disabled>❌ Пас</button>
-                    <button id="callBtn" class="action-btn call" disabled>✔️ Колл</button>
-                    <div class="raise-section">
-                        <input type="number" id="raiseAmount" placeholder="Сумма" min="0">
-                        <button id="raiseBtn" class="action-btn raise" disabled>⬆️ Рейз</button>
-                    </div>
-                    <button id="allInBtn" class="action-btn allin" disabled>🔥 ALL-IN</button>
+                <div class="info-item">
+                    <span class="info-label">🎯</span>
+                    <span class="info-value" id="playerBetCompact">0</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">📊</span>
+                    <span class="info-value" id="playerProfitCompact">+0</span>
                 </div>
             </div>
 
-            <!-- ТАБЛИЦА ЛИДЕРОВ -->
-            <div class="leaderboard" id="leaderboard">
-                <h3>🏆 Таблица лидеров</h3>
-                <div class="leaderboard-list" id="leaderboardList"></div>
+            <!-- ПАНЕЛЬ ДЕЙСТВИЙ (ФИКСИРОВАННАЯ) -->
+            <div class="action-panel-fixed" id="actionPanelFixed">
+                <div class="actions-compact">
+                    <button id="foldBtn" class="action-btn-compact fold" disabled>❌ Пас</button>
+                    <button id="callBtn" class="action-btn-compact call" disabled>✔️ Колл</button>
+                    <div class="raise-section-compact">
+                        <input type="number" id="raiseAmount" placeholder="Сумма" min="0">
+                        <button id="raiseBtn" class="action-btn-compact raise" disabled>⬆️ Рейз</button>
+                    </div>
+                    <button id="allInBtn" class="action-btn-compact allin" disabled>🔥 ALL-IN</button>
+                </div>
+            </div>
+
+            <!-- ТАБЛИЦА ЛИДЕРОВ (СВОРАЧИВАЕМАЯ) -->
+            <div class="leaderboard-collapsible" id="leaderboardCollapsible">
+                <div class="leaderboard-header" id="leaderboardHeader">
+                    <h3>🏆 Таблица лидеров</h3>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="leaderboard-content" id="leaderboardContent" style="display: none;">
+                    <div class="leaderboard-list" id="leaderboardList"></div>
+                </div>
             </div>
 
             <!-- УПРАВЛЕНИЕ ИГРОЙ -->
