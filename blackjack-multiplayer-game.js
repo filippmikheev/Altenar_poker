@@ -127,7 +127,7 @@ class BlackJackMultiplayerGame {
     
     // Раздаем по 2 карты каждому игроку
     for (let player of this.players) {
-      if (player.bet > 0 || player.isBot) {
+      if (player.bet > 0) {
         player.cards = [];
         player.cards.push(this.deck.pop());
         player.cards.push(this.deck.pop());
@@ -233,15 +233,34 @@ class BlackJackMultiplayerGame {
 
   // Обработка ботов
   processBots() {
+    // Обрабатываем ботов с задержкой
     for (let player of this.players) {
       if (player.isBot && player.state === 'playing') {
-        // Простая логика бота
-        while (player.score < 17 && player.state === 'playing') {
-          this.playerAction(player.id, 'hit');
-        }
-        if (player.state === 'playing') {
-          this.playerAction(player.id, 'stand');
-        }
+        setTimeout(() => {
+          // Простая логика бота
+          while (player.score < 17 && player.state === 'playing') {
+            const card = this.deck.pop();
+            if (card) {
+              player.cards.push(card);
+              player.score = this.calculateScore(player.cards);
+              
+              if (player.score > 21) {
+                player.state = 'finished';
+                player.result = 'lose';
+                player.winnings = 0;
+                break;
+              }
+            }
+          }
+          if (player.state === 'playing') {
+            player.state = 'finished';
+          }
+          
+          // Проверяем, все ли закончили
+          if (this.players.every(p => p.state === 'finished' || !p.bet)) {
+            this.dealerTurn();
+          }
+        }, 1000);
       }
     }
   }
