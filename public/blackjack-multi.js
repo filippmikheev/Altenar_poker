@@ -31,7 +31,17 @@ const customBetAmount = document.getElementById('customBetAmount');
 
 socket.on('connect', () => {
     playerId = socket.id;
+    socket.emit('chips-get-balance');
     socket.emit('blackjack-multi-get-rooms');
+});
+
+// Получение баланса фишек
+socket.on('chips-balance', (data) => {
+    // Обновляем отображение баланса, если есть элемент
+    const balanceEl = document.getElementById('chipsBalance');
+    if (balanceEl) {
+        balanceEl.textContent = data.balance || 0;
+    }
 });
 
 socket.on('blackjack-multi-joined', (roomId) => {

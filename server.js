@@ -2399,7 +2399,19 @@ io.on('connection', (socket) => {
       return;
     }
     
+    // Проверяем баланс фишек
+    const chipsData = playerChips.get(socket.id);
+    if (!chipsData || chipsData.balance === 0) {
+      socket.emit('blackjack-multi-error', 'Сначала купите фишки в главном меню');
+      return;
+    }
+    
     if (game.addPlayer(socket.id, playerName)) {
+      // Устанавливаем баланс из фишек
+      const player = game.players.find(p => p.id === socket.id);
+      if (player) {
+        player.balance = chipsData.balance;
+      }
       socket.join(roomId);
       socket.emit('blackjack-multi-joined', roomId);
       io.to(roomId).emit('blackjack-multi-state', game.getGameState());
@@ -2432,6 +2444,15 @@ io.on('connection', (socket) => {
     }
     
     if (game.placeBet(socket.id, amount)) {
+      // Обновляем баланс фишек
+      const player = game.players.find(p => p.id === socket.id);
+      if (player) {
+        const chipsData = playerChips.get(socket.id);
+        if (chipsData) {
+          chipsData.balance = player.balance;
+        }
+        socket.emit('chips-balance', { balance: player.balance, needsPurchase: false });
+      }
       io.to(roomId).emit('blackjack-multi-state', game.getGameState());
     }
   });
@@ -2446,6 +2467,15 @@ io.on('connection', (socket) => {
     }
     
     if (game.playerAction(socket.id, action)) {
+      // Обновляем баланс фишек
+      const player = game.players.find(p => p.id === socket.id);
+      if (player) {
+        const chipsData = playerChips.get(socket.id);
+        if (chipsData) {
+          chipsData.balance = player.balance;
+        }
+        socket.emit('chips-balance', { balance: player.balance, needsPurchase: false });
+      }
       io.to(roomId).emit('blackjack-multi-state', game.getGameState());
     }
   });
