@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>🃎 Black Jack - Мультиплеер</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃎</text></svg>">
+</head>
+<body>
+    <div class="blackjack-multi-container">
+        <!-- Заголовок -->
+        <div class="blackjack-multi-header">
+            <button class="back-btn" onclick="window.location.href='/'">← Назад</button>
+            <h1>🃎 Black Jack (Мультиплеер)</h1>
+        </div>
+
+        <!-- Лобби -->
+        <div class="lobby-screen" id="lobbyScreen">
+            <h2>Создать или присоединиться к столу</h2>
+            <div class="lobby-form">
+                <input type="text" id="playerName" placeholder="👤 Ваше имя" maxlength="15" autocomplete="off">
+                <input type="text" id="roomId" placeholder="🔑 ID комнаты (или оставьте пустым)" maxlength="10" autocomplete="off">
+                <button id="createBtn">✨ Создать стол</button>
+                <button id="joinBtn">🚀 Присоединиться</button>
+            </div>
+            <div id="roomsList" class="rooms-list"></div>
+            <button id="refreshRoomsBtn" class="refresh-btn">🔄 Обновить список</button>
+        </div>
+
+        <!-- Игровой экран -->
+        <div class="game-screen" id="gameScreen" style="display: none;">
+            <div class="game-header">
+                <h2>🃎 Стол: <span id="roomName"></span></h2>
+            </div>
+
+            <!-- Дилер -->
+            <div class="dealer-section">
+                <div class="dealer-label">🃏 Дилер</div>
+                <div class="dealer-score" id="dealerScore">?</div>
+                <div class="cards-container" id="dealerCards"></div>
+            </div>
+
+            <!-- Игроки -->
+            <div class="players-section" id="playersSection"></div>
+
+            <!-- Мой ход -->
+            <div class="my-turn-section" id="myTurnSection" style="display: none;">
+                <h3>Ваш ход</h3>
+                <div class="actions-section">
+                    <button id="hitBtn" class="action-btn-blackjack hit">Взять карту</button>
+                    <button id="standBtn" class="action-btn-blackjack stand">Остановиться</button>
+                    <button id="doubleBtn" class="action-btn-blackjack double">Удвоить</button>
+                </div>
+            </div>
+
+            <!-- Ставка -->
+            <div class="bet-section" id="betSection" style="display: none;">
+                <h3>Разместите ставку</h3>
+                <div class="bet-amounts">
+                    <button class="bet-btn" data-amount="10">10</button>
+                    <button class="bet-btn" data-amount="25">25</button>
+                    <button class="bet-btn" data-amount="50">50</button>
+                    <button class="bet-btn" data-amount="100">100</button>
+                </div>
+                <div class="custom-bet">
+                    <input type="number" id="customBetAmount" placeholder="Своя ставка" min="1">
+                    <button class="bet-btn" id="customBetBtn">Поставить</button>
+                </div>
+            </div>
+
+            <!-- Управление -->
+            <div class="game-controls" id="gameControls" style="display: none;">
+                <button id="addBotBtn" class="action-btn-blackjack">🤖 Добавить бота</button>
+                <button id="startGameBtn" class="action-btn-blackjack">🎮 Начать игру</button>
+                <button id="newGameBtn" class="action-btn-blackjack new-game">🃏 Новая игра</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="blackjack-multi.js"></script>
+</body>
+</html>
+

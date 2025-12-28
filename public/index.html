@@ -65,6 +65,30 @@
                 </div>
                 <button class="play-btn">Играть</button>
             </div>
+
+            <!-- Камень-ножницы-бумага -->
+            <div class="game-card" data-game="rps">
+                <div class="game-icon">✂️</div>
+                <h2>Камень-Ножницы-Бумага</h2>
+                <p class="game-description">Против бота</p>
+                <div class="game-features">
+                    <span class="feature">🤖 С ботом</span>
+                    <span class="feature">⚡ Быстро</span>
+                </div>
+                <button class="play-btn">Играть</button>
+            </div>
+
+            <!-- Black Jack мультиплеер -->
+            <div class="game-card" data-game="blackjack-multi">
+                <div class="game-icon">🃎</div>
+                <h2>Black Jack (Мультиплеер)</h2>
+                <p class="game-description">С друзьями и ботом</p>
+                <div class="game-features">
+                    <span class="feature">👥 До 6 игроков</span>
+                    <span class="feature">🤖 С ботом</span>
+                </div>
+                <button class="play-btn">Играть</button>
+            </div>
         </div>
     </div>
 
@@ -83,6 +107,10 @@
                     window.location.href = '/coinflip.html';
                 } else if (game === 'slots') {
                     window.location.href = '/slots.html';
+                } else if (game === 'rps') {
+                    window.location.href = '/rps.html';
+                } else if (game === 'blackjack-multi') {
+                    window.location.href = '/blackjack-multi.html';
                 }
             });
         });

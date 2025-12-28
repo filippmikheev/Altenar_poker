@@ -58,6 +58,16 @@ app.get('/slots', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'slots.html'));
 });
 
+// Роут для Камень-ножницы-бумага
+app.get('/rps', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'rps.html'));
+});
+
+// Роут для Black Jack мультиплеер
+app.get('/blackjack-multi', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'blackjack-multi.html'));
+});
+
 // API для управления сервером
 app.get('/api/status', (req, res) => {
     // Проверяем, запущен ли основной сервер (этот процесс)
@@ -2249,6 +2259,21 @@ io.on('connection', (socket) => {
     blackjackGames.delete(socket.id);
     coinflipGames.delete(socket.id);
     slotsGames.delete(socket.id);
+    rpsGames.delete(socket.id);
+    
+    // Удаляем из Black Jack мультиплеер комнат
+    blackjackRooms.forEach((game, roomId) => {
+      const playerIndex = game.players.findIndex(p => p.id === socket.id);
+      if (playerIndex !== -1) {
+        game.players.splice(playerIndex, 1);
+        if (game.players.length === 0) {
+          blackjackRooms.delete(roomId);
+        } else {
+          io.to(roomId).emit('blackjack-multi-state', game.getGameState());
+        }
+        io.emit('blackjack-multi-rooms', getBlackJackRoomsList());
+      }
+    });
     
     rooms.forEach((game, roomId) => {
       const player = game.players.find(p => p.id === socket.id);

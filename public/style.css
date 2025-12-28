@@ -2447,3 +2447,197 @@ body {
     }
 }
 
+
+/* ====== КАМЕНЬ-НОЖНИЦЫ-БУМАГА ====== */
+.rps-container {
+    min-height: 100vh;
+    padding: 20px;
+    max-width: 700px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.rps-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(26, 122, 90, 0.3);
+}
+
+.rps-header h1 {
+    font-size: 1.8em;
+    color: var(--gold);
+    margin: 0;
+}
+
+.rps-game-area {
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 15px;
+    padding: 30px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 20px;
+}
+
+.player-choice-area,
+.bot-choice-area {
+    text-align: center;
+    flex: 1;
+}
+
+.player-choice-area h3,
+.bot-choice-area h3 {
+    color: var(--white);
+    margin-bottom: 15px;
+}
+
+.choice-display {
+    font-size: 6em;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vs-divider {
+    font-size: 2em;
+    font-weight: 700;
+    color: var(--gold);
+}
+
+.choice-buttons-rps {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.choice-btn-rps {
+    flex: 1;
+    min-width: 120px;
+    padding: 20px;
+    font-size: 1.2em;
+    font-weight: 700;
+    border: 3px solid var(--gold);
+    border-radius: 15px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 179, 0, 0.2) 100%);
+    color: var(--gold);
+    cursor: pointer;
+    transition: all 0.3s;
+    min-height: 80px;
+    touch-action: manipulation;
+}
+
+.choice-btn-rps:hover {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 179, 0, 0.3) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(255, 215, 0, 0.4);
+}
+
+/* ====== BLACK JACK МУЛЬТИПЛЕЕР ====== */
+.blackjack-multi-container {
+    min-height: 100vh;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.blackjack-multi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+.blackjack-multi-header h1 {
+    font-size: 1.8em;
+    color: var(--gold);
+    margin: 0;
+}
+
+.players-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.player-item {
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+}
+
+.player-name {
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 10px;
+}
+
+.player-score {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 10px;
+}
+
+.player-cards-small {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.player-cards-small .card {
+    width: 40px;
+    height: 56px;
+    font-size: 0.6em;
+}
+
+.player-bet,
+.player-balance {
+    font-size: 0.9em;
+    color: var(--text-dim);
+    margin-top: 5px;
+}
+
+/* Мобильная версия */
+@media (max-width: 768px) {
+    .rps-container,
+    .blackjack-multi-container {
+        padding: 10px;
+    }
+    
+    .rps-game-area {
+        flex-direction: column;
+        padding: 20px;
+    }
+    
+    .choice-display {
+        font-size: 4em;
+    }
+    
+    .choice-buttons-rps {
+        flex-direction: column;
+    }
+    
+    .choice-btn-rps {
+        width: 100%;
+    }
+    
+    .players-section {
+        grid-template-columns: 1fr;
+    }
+}
+
