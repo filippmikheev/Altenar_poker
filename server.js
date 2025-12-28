@@ -14,10 +14,16 @@ const io = socketIo(server);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Главная страница - меню выбора игр
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// Система управления игроками и фишками
+const playersData = new Map(); // playerName -> { chips: 1000, socketId: null, isAdmin: false }
+const INITIAL_CHIPS = 1000; // Начальные фишки для каждого игрока
+
+// Система админских логинов и паролей
+const ADMIN_CREDENTIALS = {
+  'admin': 'admin123', // Логин: admin, Пароль: admin123
+  'filipp': 'altenar2024' // Логин: filipp, Пароль: altenar2024
+};
+const adminSessions = new Map(); // socketId -> { login: 'admin', timestamp: ... }
 
 // Управление процессами
 let tunnelProcess = null;
@@ -33,39 +39,9 @@ app.get('/start', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'launcher-simple.html'));
 });
 
-// Роут для главного меню казино
-app.get('/casino', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'casino.html'));
-});
-
-// Роут для Black Jack
-app.get('/blackjack', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'blackjack.html'));
-});
-
-// Роут для покера (старая страница)
-app.get('/poker', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'poker.html'));
-});
-
-// Роут для Монетки
-app.get('/coinflip', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'coinflip.html'));
-});
-
-// Роут для Слот-машины
-app.get('/slots', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'slots.html'));
-});
-
-// Роут для Камень-ножницы-бумага
-app.get('/rps', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'rps.html'));
-});
-
-// Роут для Black Jack мультиплеер
-app.get('/blackjack-multi', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'blackjack-multi.html'));
+// Роут для админ-панели
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 // API для управления сервером
@@ -661,9 +637,6 @@ app.post('/api/start-docker', (req, res) => {
 const rooms = new Map();
 // Таймеры для комнат
 const roomTimers = new Map();
-// Black Jack игры
-const blackjackGames = new Map();
-const BlackJackGame = require('./blackjack-game');
 
 // Игровая логика
 class PokerGame {
@@ -698,6 +671,17 @@ class PokerGame {
     if (this.players.length >= 6) return false;
     if (this.players.find(p => p.id === playerId)) return false;
     
+    // Получаем или создаем данные игрока
+    let playerData = playersData.get(playerName);
+    if (!playerData) {
+      // Создаем нового игрока с начальными фишками (не админ по умолчанию)
+      playerData = { chips: INITIAL_CHIPS, socketId: playerId, isAdmin: false };
+      playersData.set(playerName, playerData);
+    } else {
+      // Обновляем socketId для существующего игрока
+      playerData.socketId = playerId;
+    }
+    
     // Инициализируем статистику игрока
     if (!this.playerStats.has(playerId)) {
       this.playerStats.set(playerId, {
@@ -712,14 +696,15 @@ class PokerGame {
     this.players.push({
       id: playerId,
       name: playerName,
-      chips: this.buyInAmount,
+      chips: playerData.chips, // Используем сохраненные фишки
       cards: [],
       folded: false,
       allIn: false,
       bet: 0,
       isBot: false,
-      totalBuyIn: this.buyInAmount, // Общая сумма купленных фишек
-      profit: 0 // Прибыль/убыток (chips - totalBuyIn)
+      totalBuyIn: playerData.chips,
+      profit: 0,
+      isAdmin: playerData.isAdmin || false
     });
     return true;
   }
@@ -1769,24 +1754,6 @@ function getRoomsList() {
 io.on('connection', (socket) => {
   console.log('Player connected:', socket.id);
 
-  // Инициализация баланса фишек для нового игрока
-  if (!playerChips.has(socket.id)) {
-    playerChips.set(socket.id, {
-      balance: 0, // Начальный баланс 0 - нужно купить фишки
-      playerName: null,
-      needsName: true // Нужно ввести имя
-    });
-  }
-
-  // Отправляем состояние при подключении
-  const chipsData = playerChips.get(socket.id);
-  socket.emit('chips-balance', { 
-    balance: chipsData.balance, 
-    needsPurchase: chipsData.balance === 0,
-    needsName: chipsData.playerName === null || !chipsData.playerName,
-    playerName: chipsData.playerName || null
-  });
-
   // Отправляем список комнат при подключении
   socket.emit('roomsList', getRoomsList());
 
@@ -1806,6 +1773,25 @@ io.on('connection', (socket) => {
 
   socket.on('joinRoom', (data) => {
     const { roomId, playerName } = data;
+    
+    // Валидация имени (уникальное имя, не пустое)
+    if (!playerName || playerName.trim().length === 0) {
+      socket.emit('error', 'Введите ваше имя');
+      return;
+    }
+    
+    const trimmedName = playerName.trim();
+    
+    // Проверяем уникальность имени (если игрок уже есть с таким именем и он онлайн)
+    const existingPlayer = Array.from(playersData.entries()).find(([name, data]) => 
+      name === trimmedName && data.socketId !== null && data.socketId !== socket.id
+    );
+    
+    if (existingPlayer) {
+      socket.emit('error', 'Игрок с таким именем уже играет. Выберите другое имя.');
+      return;
+    }
+    
     const game = rooms.get(roomId);
     
     if (!game) {
@@ -1813,7 +1799,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    if (game.addPlayer(socket.id, playerName)) {
+    if (game.addPlayer(socket.id, trimmedName)) {
       socket.join(roomId);
       socket.emit('joinedRoom', roomId);
       
@@ -2057,470 +2043,6 @@ io.on('connection', (socket) => {
     });
   }, 1000);
 
-  // ====== BLACK JACK ======
-  socket.on('blackjack-join', (data) => {
-    const { playerName } = data;
-    if (!playerName) {
-      socket.emit('blackjack-error', 'Введите ваше имя');
-      return;
-    }
-    
-    // Получаем баланс фишек
-    const chipsData = playerChips.get(socket.id);
-    if (!chipsData || chipsData.balance === 0) {
-      socket.emit('blackjack-error', 'Сначала купите фишки в главном меню');
-      return;
-    }
-    
-    // Создаем или получаем игру
-    let game = blackjackGames.get(socket.id);
-    if (!game) {
-      game = new BlackJackGame(socket.id, playerName);
-      game.balance = chipsData.balance; // Устанавливаем баланс из фишек
-      blackjackGames.set(socket.id, game);
-    } else {
-      game.balance = chipsData.balance; // Обновляем баланс
-    }
-    
-    socket.emit('blackjack-state', game.getGameState());
-  });
-
-  socket.on('blackjack-bet', (data) => {
-    const { amount } = data;
-    const game = blackjackGames.get(socket.id);
-    
-    if (!game) {
-      socket.emit('blackjack-error', 'Игра не найдена');
-      return;
-    }
-    
-    if (game.placeBet(amount)) {
-      // Обновляем баланс фишек
-      const chipsData = playerChips.get(socket.id);
-      if (chipsData) {
-        chipsData.balance = game.balance;
-      }
-      socket.emit('blackjack-state', game.getGameState());
-      socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
-    } else {
-      socket.emit('blackjack-error', 'Неверная ставка');
-    }
-  });
-
-  socket.on('blackjack-hit', () => {
-    const game = blackjackGames.get(socket.id);
-    if (!game) {
-      socket.emit('blackjack-error', 'Игра не найдена');
-      return;
-    }
-    
-    game.hit();
-    // Обновляем баланс фишек
-    const chipsData = playerChips.get(socket.id);
-    if (chipsData) {
-      chipsData.balance = game.balance;
-    }
-    socket.emit('blackjack-state', game.getGameState());
-    socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
-  });
-
-  socket.on('blackjack-stand', () => {
-    const game = blackjackGames.get(socket.id);
-    if (!game) {
-      socket.emit('blackjack-error', 'Игра не найдена');
-      return;
-    }
-    
-    game.stand();
-    // Обновляем баланс фишек
-    const chipsData = playerChips.get(socket.id);
-    if (chipsData) {
-      chipsData.balance = game.balance;
-    }
-    socket.emit('blackjack-state', game.getGameState());
-    socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
-  });
-
-  socket.on('blackjack-double', () => {
-    const game = blackjackGames.get(socket.id);
-    if (!game) {
-      socket.emit('blackjack-error', 'Игра не найдена');
-      return;
-    }
-    
-    if (game.doubleDown()) {
-      // Обновляем баланс фишек
-      const chipsData = playerChips.get(socket.id);
-      if (chipsData) {
-        chipsData.balance = game.balance;
-      }
-      socket.emit('blackjack-state', game.getGameState());
-      socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
-    } else {
-      socket.emit('blackjack-error', 'Нельзя удвоить ставку');
-    }
-  });
-
-  socket.on('blackjack-new-game', () => {
-    const game = blackjackGames.get(socket.id);
-    if (!game) {
-      socket.emit('blackjack-error', 'Игра не найдена');
-      return;
-    }
-    
-    game.newGame();
-    socket.emit('blackjack-state', game.getGameState());
-  });
-
-  // ====== МОНЕТКА ======
-  socket.on('coinflip-join', (data) => {
-    const { playerName } = data;
-    if (!playerName) {
-      socket.emit('coinflip-error', 'Введите ваше имя');
-      return;
-    }
-    
-    let game = coinflipGames.get(socket.id);
-    if (!game) {
-      game = new CoinFlipGame(socket.id, playerName);
-      coinflipGames.set(socket.id, game);
-    }
-    
-    socket.emit('coinflip-state', game.getGameState());
-  });
-
-  socket.on('coinflip-bet', (data) => {
-    const { amount, choice } = data;
-    const game = coinflipGames.get(socket.id);
-    
-    if (!game) {
-      socket.emit('coinflip-error', 'Игра не найдена');
-      return;
-    }
-    
-    if (game.placeBet(amount, choice)) {
-      // Обновляем баланс фишек после ставки
-      const chipsData = playerChips.get(socket.id);
-      if (chipsData) {
-        chipsData.balance = game.balance;
-      }
-      // Отправляем состояние "flipping" сразу
-      socket.emit('coinflip-state', game.getGameState());
-      socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
-      
-      // Подбрасываем монетку через небольшую задержку для анимации
-      setTimeout(() => {
-        if (game.flipCoin()) {
-          // Обновляем баланс фишек после результата
-          if (chipsData) {
-            chipsData.balance = game.balance;
-          }
-          // Отправляем финальное состояние
-          socket.emit('coinflip-state', game.getGameState());
-          socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
-        }
-      }, 2000);
-    } else {
-      socket.emit('coinflip-error', 'Неверная ставка');
-    }
-  });
-
-  socket.on('coinflip-new-game', () => {
-    const game = coinflipGames.get(socket.id);
-    if (!game) {
-      socket.emit('coinflip-error', 'Игра не найдена');
-      return;
-    }
-    
-    game.newGame();
-    socket.emit('coinflip-state', game.getGameState());
-  });
-
-  // ====== СЛОТ-МАШИНА ======
-  socket.on('slots-join', (data) => {
-    // Получаем имя и баланс из системы фишек
-    const chipsData = playerChips.get(socket.id);
-    if (!chipsData || !chipsData.playerName) {
-      socket.emit('slots-error', 'Сначала введите ваше имя в главном меню');
-      return;
-    }
-    
-    if (!chipsData.balance || chipsData.balance === 0) {
-      socket.emit('slots-error', 'Сначала купите фишки в главном меню');
-      return;
-    }
-    
-    let game = slotsGames.get(socket.id);
-    if (!game) {
-      game = new SlotsGame(socket.id, chipsData.playerName);
-      game.balance = chipsData.balance;
-      slotsGames.set(socket.id, game);
-    } else {
-      game.balance = chipsData.balance;
-    }
-    
-    socket.emit('slots-state', game.getGameState());
-  });
-
-  socket.on('slots-bet', (data) => {
-    const { amount } = data;
-    const game = slotsGames.get(socket.id);
-    
-    if (!game) {
-      socket.emit('slots-error', 'Игра не найдена');
-      return;
-    }
-    
-    if (game.placeBet(amount)) {
-      // Обновляем баланс фишек
-      const chipsData = playerChips.get(socket.id);
-      if (chipsData) {
-        chipsData.balance = game.balance;
-      }
-      // Отправляем состояние сразу (spinning)
-      socket.emit('slots-state', game.getGameState());
-      socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
-      
-      // Отправляем результат после кручения
-      setTimeout(() => {
-        // Обновляем баланс после результата
-        if (chipsData) {
-          chipsData.balance = game.balance;
-        }
-        socket.emit('slots-state', game.getGameState());
-        socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
-      }, 3000);
-    } else {
-      socket.emit('slots-error', 'Неверная ставка');
-    }
-  });
-
-  socket.on('slots-new-game', () => {
-    const game = slotsGames.get(socket.id);
-    if (!game) {
-      socket.emit('slots-error', 'Игра не найдена');
-      return;
-    }
-    
-    game.newGame();
-    socket.emit('slots-state', game.getGameState());
-  });
-
-  // ====== КАМЕНЬ-НОЖНИЦЫ-БУМАГА ======
-  socket.on('rps-join', (data) => {
-    // Получаем имя и баланс из системы фишек
-    const chipsData = playerChips.get(socket.id);
-    if (!chipsData || !chipsData.playerName) {
-      socket.emit('rps-error', 'Сначала введите ваше имя в главном меню');
-      return;
-    }
-    
-    if (!chipsData.balance || chipsData.balance === 0) {
-      socket.emit('rps-error', 'Сначала купите фишки в главном меню');
-      return;
-    }
-    
-    let game = rpsGames.get(socket.id);
-    if (!game) {
-      game = new RPSGame(socket.id, chipsData.playerName);
-      game.balance = chipsData.balance;
-      rpsGames.set(socket.id, game);
-    } else {
-      game.balance = chipsData.balance;
-    }
-    
-    socket.emit('rps-state', game.getGameState());
-  });
-
-  socket.on('rps-bet', (data) => {
-    const { amount } = data;
-    const game = rpsGames.get(socket.id);
-    
-    if (!game) {
-      socket.emit('rps-error', 'Игра не найдена');
-      return;
-    }
-    
-    if (game.placeBet(amount)) {
-      // Обновляем баланс фишек
-      const chipsData = playerChips.get(socket.id);
-      if (chipsData) {
-        chipsData.balance = game.balance;
-      }
-      socket.emit('rps-state', game.getGameState());
-      socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
-    } else {
-      socket.emit('rps-error', 'Неверная ставка');
-    }
-  });
-
-  socket.on('rps-choice', (data) => {
-    const { choice } = data;
-    const game = rpsGames.get(socket.id);
-    
-    if (!game) {
-      socket.emit('rps-error', 'Игра не найдена');
-      return;
-    }
-    
-    if (game.makeChoice(choice)) {
-      // Обновляем баланс фишек
-      const chipsData = playerChips.get(socket.id);
-      if (chipsData) {
-        chipsData.balance = game.balance;
-      }
-      socket.emit('rps-state', game.getGameState());
-      socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
-    } else {
-      socket.emit('rps-error', 'Неверный выбор');
-    }
-  });
-
-  socket.on('rps-new-game', () => {
-    const game = rpsGames.get(socket.id);
-    if (!game) {
-      socket.emit('rps-error', 'Игра не найдена');
-      return;
-    }
-    
-    game.newGame();
-    socket.emit('rps-state', game.getGameState());
-  });
-
-  // ====== BLACK JACK МУЛЬТИПЛЕЕР ======
-  socket.on('blackjack-multi-create', (roomId) => {
-    if (!blackjackRooms.has(roomId)) {
-      blackjackRooms.set(roomId, new BlackJackMultiplayerGame(roomId, socket.id));
-      io.emit('blackjack-multi-rooms', getBlackJackRoomsList());
-    }
-    socket.join(roomId);
-    socket.emit('blackjack-multi-joined', roomId);
-  });
-
-  socket.on('blackjack-multi-join', (data) => {
-    const { roomId } = data;
-    const game = blackjackRooms.get(roomId);
-    
-    if (!game) {
-      socket.emit('blackjack-multi-error', 'Комната не найдена');
-      return;
-    }
-    
-    // Получаем имя и баланс из системы фишек
-    const chipsData = playerChips.get(socket.id);
-    if (!chipsData || !chipsData.playerName) {
-      socket.emit('blackjack-multi-error', 'Сначала введите ваше имя в главном меню');
-      return;
-    }
-    
-    if (!chipsData.balance || chipsData.balance === 0) {
-      socket.emit('blackjack-multi-error', 'Сначала купите фишки в главном меню');
-      return;
-    }
-    
-    if (game.addPlayer(socket.id, chipsData.playerName)) {
-      // Устанавливаем баланс из фишек
-      const player = game.players.find(p => p.id === socket.id);
-      if (player) {
-        player.balance = chipsData.balance;
-      }
-      socket.join(roomId);
-      socket.emit('blackjack-multi-joined', roomId);
-      io.to(roomId).emit('blackjack-multi-state', game.getGameState());
-      io.emit('blackjack-multi-rooms', getBlackJackRoomsList());
-    } else {
-      socket.emit('blackjack-multi-error', 'Не удалось присоединиться');
-    }
-  });
-
-  socket.on('blackjack-multi-add-bot', (roomId) => {
-    const game = blackjackRooms.get(roomId);
-    if (!game) {
-      socket.emit('blackjack-multi-error', 'Комната не найдена');
-      return;
-    }
-    
-    if (game.addBot()) {
-      io.to(roomId).emit('blackjack-multi-state', game.getGameState());
-      io.emit('blackjack-multi-rooms', getBlackJackRoomsList());
-    }
-  });
-
-  socket.on('blackjack-multi-bet', (data) => {
-    const { roomId, amount } = data;
-    const game = blackjackRooms.get(roomId);
-    
-    if (!game) {
-      socket.emit('blackjack-multi-error', 'Комната не найдена');
-      return;
-    }
-    
-    if (game.placeBet(socket.id, amount)) {
-      // Обновляем баланс фишек
-      const player = game.players.find(p => p.id === socket.id);
-      if (player) {
-        const chipsData = playerChips.get(socket.id);
-        if (chipsData) {
-          chipsData.balance = player.balance;
-        }
-        socket.emit('chips-balance', { balance: player.balance, needsPurchase: false });
-      }
-      io.to(roomId).emit('blackjack-multi-state', game.getGameState());
-    }
-  });
-
-  socket.on('blackjack-multi-action', (data) => {
-    const { roomId, action } = data;
-    const game = blackjackRooms.get(roomId);
-    
-    if (!game) {
-      socket.emit('blackjack-multi-error', 'Комната не найдена');
-      return;
-    }
-    
-    if (game.playerAction(socket.id, action)) {
-      // Обновляем баланс фишек
-      const player = game.players.find(p => p.id === socket.id);
-      if (player) {
-        const chipsData = playerChips.get(socket.id);
-        if (chipsData) {
-          chipsData.balance = player.balance;
-        }
-        socket.emit('chips-balance', { balance: player.balance, needsPurchase: false });
-      }
-      io.to(roomId).emit('blackjack-multi-state', game.getGameState());
-    }
-  });
-
-  socket.on('blackjack-multi-start', (roomId) => {
-    const game = blackjackRooms.get(roomId);
-    if (!game) return;
-    
-    if (game.startGame()) {
-      io.to(roomId).emit('blackjack-multi-state', game.getGameState());
-    }
-  });
-
-  socket.on('blackjack-multi-new-game', (roomId) => {
-    const game = blackjackRooms.get(roomId);
-    if (!game) return;
-    
-    game.newGame();
-    io.to(roomId).emit('blackjack-multi-state', game.getGameState());
-  });
-
-  socket.on('blackjack-multi-get-rooms', () => {
-    socket.emit('blackjack-multi-rooms', getBlackJackRoomsList());
-  });
-
-  function getBlackJackRoomsList() {
-    return Array.from(blackjackRooms.entries()).map(([roomId, game]) => ({
-      roomId,
-      players: game.players.length,
-      state: game.state
-    }));
-  }
-
   // Закрытие комнаты (только админ)
   socket.on('closeRoom', (roomId) => {
     const game = rooms.get(roomId);
@@ -2553,36 +2075,131 @@ io.on('connection', (socket) => {
     console.log(`Комната ${roomId} закрыта администратором ${socket.id}`);
   });
 
-  socket.on('disconnect', () => {
-    console.log('Player disconnected:', socket.id);
+  // Админские функции
+  socket.on('admin-authenticate', (data) => {
+    const { login, password } = data;
     
-    // Удаляем игры при отключении
-    blackjackGames.delete(socket.id);
-    coinflipGames.delete(socket.id);
-    slotsGames.delete(socket.id);
-    rpsGames.delete(socket.id);
-    
-    // Удаляем имя из списка активных
-    const chipsData = playerChips.get(socket.id);
-    if (chipsData && chipsData.playerName) {
-      activePlayerNames.delete(chipsData.playerName);
+    if (!login || !password) {
+      socket.emit('admin-authenticated', { success: false, message: 'Введите логин и пароль' });
+      return;
     }
-    playerChips.delete(socket.id);
     
-    // Удаляем из Black Jack мультиплеер комнат
-    blackjackRooms.forEach((game, roomId) => {
-      const playerIndex = game.players.findIndex(p => p.id === socket.id);
-      if (playerIndex !== -1) {
-        game.players.splice(playerIndex, 1);
-        if (game.players.length === 0) {
-          blackjackRooms.delete(roomId);
-        } else {
-          io.to(roomId).emit('blackjack-multi-state', game.getGameState());
-        }
-        io.emit('blackjack-multi-rooms', getBlackJackRoomsList());
+    // Проверяем логин и пароль
+    if (ADMIN_CREDENTIALS[login] === password) {
+      // Сохраняем сессию админа
+      adminSessions.set(socket.id, { login, timestamp: Date.now() });
+      socket.emit('admin-authenticated', { success: true, login });
+    } else {
+      socket.emit('admin-authenticated', { success: false, message: 'Неверный логин или пароль' });
+    }
+  });
+
+  socket.on('admin-get-players', () => {
+    // Проверяем админскую сессию
+    if (!adminSessions.has(socket.id)) {
+      socket.emit('admin-error', 'Доступ запрещен. Войдите в админ-панель.');
+      return;
+    }
+    
+    const playersList = Array.from(playersData.entries()).map(([name, data]) => ({
+      name,
+      chips: data.chips,
+      isAdmin: data.isAdmin,
+      isOnline: data.socketId !== null
+    }));
+    socket.emit('admin-players-list', playersList);
+  });
+
+  socket.on('admin-set-chips', (data) => {
+    const { playerName, chips } = data;
+    
+    // Проверяем админскую сессию
+    if (!adminSessions.has(socket.id)) {
+      socket.emit('admin-error', 'Доступ запрещен. Войдите в админ-панель.');
+      return;
+    }
+    
+    if (!playersData.has(playerName)) {
+      socket.emit('admin-error', 'Игрок не найден.');
+      return;
+    }
+    
+    const newChips = parseInt(chips);
+    if (isNaN(newChips) || newChips < 0) {
+      socket.emit('admin-error', 'Некорректное количество фишек.');
+      return;
+    }
+    
+    const playerData = playersData.get(playerName);
+    playerData.chips = newChips;
+    
+    // Обновляем фишки во всех активных играх
+    rooms.forEach((game, roomId) => {
+      const player = game.players.find(p => p.name === playerName);
+      if (player) {
+        player.chips = newChips;
+        io.to(roomId).emit('gameState', game.getGameState());
       }
     });
     
+    socket.emit('admin-success', `Фишки игрока ${playerName} установлены: ${newChips}`);
+    socket.emit('admin-get-players'); // Обновляем список
+  });
+
+  socket.on('admin-delete-room', (data) => {
+    const { roomId } = data;
+    
+    // Проверяем админскую сессию
+    if (!adminSessions.has(socket.id)) {
+      socket.emit('admin-error', 'Доступ запрещен. Войдите в админ-панель.');
+      return;
+    }
+    
+    if (!rooms.has(roomId)) {
+      socket.emit('admin-error', 'Стол не найден.');
+      return;
+    }
+    
+    // Уведомляем всех игроков в комнате
+    io.to(roomId).emit('room-closed-by-admin', 'Стол закрыт администратором');
+    
+    // Удаляем комнату
+    rooms.delete(roomId);
+    io.emit('roomsList', getRoomsList());
+    
+    socket.emit('admin-success', `Стол ${roomId} удален.`);
+  });
+
+  socket.on('admin-get-rooms', () => {
+    // Проверяем админскую сессию
+    if (!adminSessions.has(socket.id)) {
+      socket.emit('admin-error', 'Доступ запрещен. Войдите в админ-панель.');
+      return;
+    }
+    
+    const roomsList = Array.from(rooms.entries()).map(([roomId, game]) => ({
+      roomId,
+      playersCount: game.players.length,
+      state: game.state,
+      adminId: game.adminId
+    }));
+    
+    socket.emit('admin-rooms-list', roomsList);
+  });
+
+  socket.on('disconnect', () => {
+    // Удаляем админскую сессию
+    adminSessions.delete(socket.id);
+    
+    // Обновляем socketId в playersData
+    const playerName = Array.from(playersData.entries()).find(([name, data]) => data.socketId === socket.id)?.[0];
+    if (playerName) {
+      const playerData = playersData.get(playerName);
+      if (playerData) {
+        playerData.socketId = null; // Игрок отключился, но данные сохраняются
+      }
+    }
+    console.log('Player disconnected:', socket.id);
     rooms.forEach((game, roomId) => {
       const player = game.players.find(p => p.id === socket.id);
       if (player) {

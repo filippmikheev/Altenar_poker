@@ -3,41 +3,11 @@ let currentRoomId = null;
 let playerId = null;
 let gameState = null;
 let isMyTurn = false;
-let chipsBalance = 0;
-
-// Получение баланса фишек
-socket.on('chips-balance', (data) => {
-    chipsBalance = data.balance || 0;
-    // Обновляем отображение баланса в покере, если есть элемент
-    const balanceEl = document.getElementById('playerChips');
-    if (balanceEl && gameState) {
-        const myPlayer = gameState.players ? gameState.players.find(p => p.id === playerId) : null;
-        if (myPlayer) {
-            myPlayer.chips = chipsBalance;
-            balanceEl.textContent = chipsBalance;
-        }
-    }
-});
-
-// Получаем баланс при подключении
-socket.on('connect', () => {
-    socket.emit('chips-get-balance');
-});
 
 // Обработка ошибок подключения
 socket.on('connect', () => {
     console.log('Подключено к серверу');
     playerId = socket.id;
-    socket.emit('chips-get-balance');
-});
-
-// Обновление баланса фишек в покере
-socket.on('chips-balance', (data) => {
-    chipsBalance = data.balance || 0;
-    const pokerChipsBalanceEl = document.getElementById('pokerChipsBalance');
-    if (pokerChipsBalanceEl) {
-        pokerChipsBalanceEl.textContent = chipsBalance;
-    }
 });
 
 socket.on('connect_error', (error) => {
@@ -76,13 +46,6 @@ const timerDisplay = document.getElementById('timerDisplay');
 const timeLeftSpan = document.getElementById('timeLeft');
 const playerBuyIn = document.getElementById('playerBuyIn');
 const playerProfit = document.getElementById('playerProfit');
-// Компактные элементы
-const playerChipsCompact = document.getElementById('playerChipsCompact');
-const playerBetCompact = document.getElementById('playerBetCompact');
-const playerProfitCompact = document.getElementById('playerProfitCompact');
-// Сворачиваемая таблица лидеров
-const leaderboardHeader = document.getElementById('leaderboardHeader');
-const leaderboardContent = document.getElementById('leaderboardContent');
 const buyInControls = document.getElementById('buyInControls');
 const buyInAmountInput = document.getElementById('buyInAmount');
 const buyChipsBtn = document.getElementById('buyChipsBtn');
@@ -847,10 +810,6 @@ function updateGameDisplay() {
         if (playerChips) playerChips.textContent = myPlayer.chips || 0;
         if (playerBet) playerBet.textContent = myPlayer.bet || 0;
         
-        // Обновляем компактные элементы
-        if (playerChipsCompact) playerChipsCompact.textContent = myPlayer.chips || 0;
-        if (playerBetCompact) playerBetCompact.textContent = myPlayer.bet || 0;
-        
         // Статистика
         if (myPlayer.totalBuyIn !== undefined) {
             if (playerBuyIn) playerBuyIn.textContent = myPlayer.totalBuyIn;
@@ -858,10 +817,6 @@ function updateGameDisplay() {
             if (playerProfit) {
                 playerProfit.textContent = profit >= 0 ? `+${profit}` : `${profit}`;
                 playerProfit.style.color = profit >= 0 ? '#4caf50' : '#f44336';
-            }
-            if (playerProfitCompact) {
-                playerProfitCompact.textContent = profit >= 0 ? `+${profit}` : `${profit}`;
-                playerProfitCompact.style.color = profit >= 0 ? '#4caf50' : '#f44336';
             }
         }
 

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Админ-панель</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            color: var(--text-light);
+        }
+        .admin-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .admin-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+        }
+        .admin-section h3 {
+            color: var(--gold);
+            margin-bottom: 15px;
+        }
+        .players-table, .rooms-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .players-table th, .players-table td,
+        .rooms-table th, .rooms-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .players-table th, .rooms-table th {
+            background: rgba(255, 215, 0, 0.2);
+            color: var(--gold);
+        }
+        .admin-input {
+            padding: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.5);
+            color: var(--text-light);
+            width: 150px;
+        }
+        .admin-btn {
+            padding: 8px 15px;
+            background: var(--gold);
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .admin-btn:hover {
+            background: #ffd700;
+        }
+        .admin-btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        .admin-btn-danger:hover {
+            background: #c0392b;
+        }
+        .admin-message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .admin-message.success {
+            background: rgba(46, 204, 113, 0.3);
+            color: #2ecc71;
+        }
+        .admin-message.error {
+            background: rgba(231, 76, 60, 0.3);
+            color: #e74c3c;
+        }
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <a href="/" class="back-btn">← Назад к покеру</a>
+        
+        <div class="admin-header">
+            <h1>🔧 Админ-панель</h1>
+            <p>Управление игроками и столами</p>
+        </div>
+
+        <div id="adminMessage"></div>
+
+        <!-- Форма входа для админа -->
+        <div id="adminLoginForm" class="admin-section" style="display: none;">
+            <h3>🔐 Вход в админ-панель</h3>
+            <p style="margin-bottom: 15px;">Введите логин и пароль для доступа:</p>
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 400px;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px;">Логин:</label>
+                    <input type="text" id="adminLoginInput" class="admin-input" placeholder="admin" style="width: 100%;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px;">Пароль:</label>
+                    <input type="password" id="adminPasswordInput" class="admin-input" placeholder="••••••••" style="width: 100%;">
+                </div>
+                <button class="admin-btn" onclick="loginAsAdmin()" style="width: 100%;">Войти</button>
+            </div>
+            <div style="margin-top: 15px; padding: 10px; background: rgba(255, 215, 0, 0.1); border-radius: 5px; font-size: 0.9em;">
+                <strong>Доступные логины:</strong><br>
+                • Логин: <code>admin</code>, Пароль: <code>admin123</code><br>
+                • Логин: <code>filipp</code>, Пароль: <code>altenar2024</code>
+            </div>
+        </div>
+
+        <!-- Управление игроками -->
+        <div class="admin-section">
+            <h3>👥 Управление игроками</h3>
+            <button class="admin-btn" onclick="loadPlayers()">🔄 Обновить список</button>
+            <table class="players-table">
+                <thead>
+                    <tr>
+                        <th>Имя (Email)</th>
+                        <th>Фишки</th>
+                        <th>Статус</th>
+                        <th>Роль</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="playersTableBody">
+                    <tr>
+                        <td colspan="5" style="text-align: center;">Загрузка...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Управление столами -->
+        <div class="admin-section">
+            <h3>🎰 Управление столами</h3>
+            <button class="admin-btn" onclick="loadRooms()">🔄 Обновить список</button>
+            <table class="rooms-table">
+                <thead>
+                    <tr>
+                        <th>ID стола</th>
+                        <th>Игроков</th>
+                        <th>Состояние</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="roomsTableBody">
+                    <tr>
+                        <td colspan="4" style="text-align: center;">Загрузка...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const adminMessage = document.getElementById('adminMessage');
+        const adminLoginForm = document.getElementById('adminLoginForm');
+        let isAdminAuthenticated = false;
+
+        socket.on('connect', () => {
+            console.log('Подключено к серверу');
+            // Проверяем, есть ли сохраненный админский логин
+            const savedAdminLogin = localStorage.getItem('adminLogin');
+            if (savedAdminLogin) {
+                // Автоматически не входим, показываем форму
+                adminLoginForm.style.display = 'block';
+                document.getElementById('adminLoginInput').value = savedAdminLogin;
+            } else {
+                // Показываем форму входа
+                adminLoginForm.style.display = 'block';
+            }
+        });
+
+        socket.on('admin-authenticated', (data) => {
+            if (data.success) {
+                isAdminAuthenticated = true;
+                adminLoginForm.style.display = 'none';
+                showMessage('Добро пожаловать в админ-панель!', 'success');
+                loadPlayers();
+                loadRooms();
+            } else {
+                showMessage(data.message || 'Неверный логин или пароль', 'error');
+            }
+        });
+
+        function loginAsAdmin() {
+            const loginInput = document.getElementById('adminLoginInput');
+            const passwordInput = document.getElementById('adminPasswordInput');
+            const login = loginInput.value.trim();
+            const password = passwordInput.value.trim();
+            
+            if (!login || !password) {
+                showMessage('Введите логин и пароль', 'error');
+                return;
+            }
+            
+            authenticateAdmin(login, password);
+        }
+
+        function authenticateAdmin(login, password) {
+            // Сохраняем логин (но не пароль)
+            localStorage.setItem('adminLogin', login);
+            socket.emit('admin-authenticate', { login, password });
+        }
+        
+        // Обработка Enter в полях ввода
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginInput = document.getElementById('adminLoginInput');
+            const passwordInput = document.getElementById('adminPasswordInput');
+            if (loginInput) {
+                loginInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        passwordInput.focus();
+                    }
+                });
+            }
+            if (passwordInput) {
+                passwordInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        loginAsAdmin();
+                    }
+                });
+            }
+        });
+
+        socket.on('admin-players-list', (players) => {
+            const tbody = document.getElementById('playersTableBody');
+            tbody.innerHTML = '';
+            
+            if (players.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Нет игроков</td></tr>';
+                return;
+            }
+            
+            players.forEach(player => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${player.name}</td>
+                    <td>
+                        <input type="number" class="admin-input" id="chips_${player.name}" value="${player.chips}" min="0">
+                    </td>
+                    <td>${player.isOnline ? '🟢 Онлайн' : '🔴 Офлайн'}</td>
+                    <td>${player.isAdmin ? '👑 Админ' : '👤 Игрок'}</td>
+                    <td>
+                        <button class="admin-btn" onclick="setChips('${player.name}')">💾 Сохранить</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+
+        socket.on('admin-rooms-list', (rooms) => {
+            const tbody = document.getElementById('roomsTableBody');
+            tbody.innerHTML = '';
+            
+            if (rooms.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Нет активных столов</td></tr>';
+                return;
+            }
+            
+            rooms.forEach(room => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${room.roomId}</td>
+                    <td>${room.playersCount}</td>
+                    <td>${room.state}</td>
+                    <td>
+                        <button class="admin-btn admin-btn-danger" onclick="deleteRoom('${room.roomId}')">❌ Удалить</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+
+        socket.on('admin-success', (message) => {
+            showMessage(message, 'success');
+        });
+
+        socket.on('admin-error', (message) => {
+            showMessage(message, 'error');
+        });
+
+        function showMessage(message, type) {
+            adminMessage.innerHTML = `<div class="admin-message ${type}">${message}</div>`;
+            setTimeout(() => {
+                adminMessage.innerHTML = '';
+            }, 5000);
+        }
+
+        function loadPlayers() {
+            if (!isAdminAuthenticated) {
+                showMessage('Сначала войдите в админ-панель', 'error');
+                return;
+            }
+            socket.emit('admin-get-players');
+        }
+
+        function loadRooms() {
+            if (!isAdminAuthenticated) {
+                showMessage('Сначала войдите в админ-панель', 'error');
+                return;
+            }
+            socket.emit('admin-get-rooms');
+        }
+
+        function setChips(playerName) {
+            const input = document.getElementById(`chips_${playerName}`);
+            const chips = parseInt(input.value);
+            if (isNaN(chips) || chips < 0) {
+                showMessage('Некорректное количество фишек', 'error');
+                return;
+            }
+            socket.emit('admin-set-chips', { playerName, chips });
+        }
+
+        function deleteRoom(roomId) {
+            if (confirm(`Вы уверены, что хотите удалить стол ${roomId}?`)) {
+                socket.emit('admin-delete-room', { roomId });
+                setTimeout(() => loadRooms(), 1000);
+            }
+        }
+
+        // Автообновление каждые 10 секунд
+        setInterval(() => {
+            loadPlayers();
+            loadRooms();
+        }, 10000);
+    </script>
+</body>
+</html>
+
