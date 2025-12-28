@@ -27,6 +27,13 @@ const choiceEmojis = {
     'scissors': '✂️'
 };
 
+// Получение баланса фишек
+socket.on('chips-balance', (data) => {
+    if (balanceEl) {
+        balanceEl.textContent = data.balance || 0;
+    }
+});
+
 // Запрос имени при загрузке
 window.addEventListener('load', () => {
     const name = prompt('Введите ваше имя:');
@@ -36,6 +43,9 @@ window.addEventListener('load', () => {
     } else {
         socket.emit('rps-join', { playerName: 'Игрок' });
     }
+    
+    // Получаем баланс фишек
+    socket.emit('chips-get-balance');
 });
 
 // Обработчики событий Socket.IO

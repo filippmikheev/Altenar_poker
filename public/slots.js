@@ -21,6 +21,13 @@ const customBetAmount = document.getElementById('customBetAmount');
 // Символы для анимации
 const symbols = ['🍒', '🍋', '🍊', '🍇', '🔔', '⭐', '💎', '7️⃣'];
 
+// Получение баланса фишек
+socket.on('chips-balance', (data) => {
+    if (balanceEl) {
+        balanceEl.textContent = data.balance || 0;
+    }
+});
+
 // Запрос имени при загрузке
 window.addEventListener('load', () => {
     const name = prompt('Введите ваше имя:');
@@ -30,6 +37,9 @@ window.addEventListener('load', () => {
     } else {
         socket.emit('slots-join', { playerName: 'Игрок' });
     }
+    
+    // Получаем баланс фишек
+    socket.emit('chips-get-balance');
 });
 
 // Обработчики событий Socket.IO

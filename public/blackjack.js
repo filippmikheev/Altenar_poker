@@ -25,6 +25,13 @@ const newGameBtn = document.getElementById('newGameBtn');
 const customBetBtn = document.getElementById('customBetBtn');
 const customBetAmount = document.getElementById('customBetAmount');
 
+// Получение баланса фишек
+socket.on('chips-balance', (data) => {
+    if (balanceEl) {
+        balanceEl.textContent = data.balance || 0;
+    }
+});
+
 // Запрос имени при загрузке
 window.addEventListener('load', () => {
     const name = prompt('Введите ваше имя:');
@@ -36,6 +43,9 @@ window.addEventListener('load', () => {
         playerNameEl.textContent = 'Игрок';
         socket.emit('blackjack-join', { playerName: 'Игрок' });
     }
+    
+    // Получаем баланс фишек
+    socket.emit('chips-get-balance');
 });
 
 // Обработчики событий Socket.IO

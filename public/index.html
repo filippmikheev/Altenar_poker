@@ -15,6 +15,34 @@
         <div class="casino-header">
             <h1>🎰 Казино</h1>
             <p class="casino-subtitle">Выберите игру</p>
+            <div class="chips-balance-display">
+                💰 Фишки: <span id="chipsBalance">0</span>
+                <button id="buyChipsBtn" class="buy-chips-btn">💵 Купить фишки</button>
+            </div>
+        </div>
+
+        <!-- Модальное окно покупки фишек -->
+        <div class="chips-modal" id="chipsModal" style="display: none;">
+            <div class="chips-modal-content">
+                <h2>💵 Покупка фишек</h2>
+                <p>Выберите количество фишек для покупки:</p>
+                <div class="chips-amounts">
+                    <button class="chips-amount-btn" data-amount="100">100 фишек</button>
+                    <button class="chips-amount-btn" data-amount="500">500 фишек</button>
+                    <button class="chips-amount-btn" data-amount="1000">1000 фишек</button>
+                    <button class="chips-amount-btn" data-amount="2500">2500 фишек</button>
+                    <button class="chips-amount-btn" data-amount="5000">5000 фишек</button>
+                    <button class="chips-amount-btn" data-amount="10000">10000 фишек</button>
+                </div>
+                <div class="custom-chips">
+                    <input type="number" id="customChipsAmount" placeholder="Своя сумма" min="1">
+                    <button class="chips-amount-btn" id="customChipsBtn">Купить</button>
+                </div>
+                <div class="current-balance">
+                    Текущий баланс: <span id="currentChipsBalance">0</span> фишек
+                </div>
+                <button class="close-chips-modal" onclick="document.getElementById('chipsModal').style.display='none'">Закрыть</button>
+            </div>
         </div>
 
         <div class="games-grid">

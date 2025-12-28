@@ -3,11 +3,41 @@ let currentRoomId = null;
 let playerId = null;
 let gameState = null;
 let isMyTurn = false;
+let chipsBalance = 0;
+
+// Получение баланса фишек
+socket.on('chips-balance', (data) => {
+    chipsBalance = data.balance || 0;
+    // Обновляем отображение баланса в покере, если есть элемент
+    const balanceEl = document.getElementById('playerChips');
+    if (balanceEl && gameState) {
+        const myPlayer = gameState.players ? gameState.players.find(p => p.id === playerId) : null;
+        if (myPlayer) {
+            myPlayer.chips = chipsBalance;
+            balanceEl.textContent = chipsBalance;
+        }
+    }
+});
+
+// Получаем баланс при подключении
+socket.on('connect', () => {
+    socket.emit('chips-get-balance');
+});
 
 // Обработка ошибок подключения
 socket.on('connect', () => {
     console.log('Подключено к серверу');
     playerId = socket.id;
+    socket.emit('chips-get-balance');
+});
+
+// Обновление баланса фишек в покере
+socket.on('chips-balance', (data) => {
+    chipsBalance = data.balance || 0;
+    const pokerChipsBalanceEl = document.getElementById('pokerChipsBalance');
+    if (pokerChipsBalanceEl) {
+        pokerChipsBalanceEl.textContent = chipsBalance;
+    }
 });
 
 socket.on('connect_error', (error) => {

@@ -1769,6 +1769,18 @@ function getRoomsList() {
 io.on('connection', (socket) => {
   console.log('Player connected:', socket.id);
 
+  // Инициализация баланса фишек для нового игрока
+  if (!playerChips.has(socket.id)) {
+    playerChips.set(socket.id, {
+      balance: 0, // Начальный баланс 0 - нужно купить фишки
+      playerName: null
+    });
+  }
+
+  // Отправляем баланс при подключении
+  const chipsData = playerChips.get(socket.id);
+  socket.emit('chips-balance', { balance: chipsData.balance, needsPurchase: chipsData.balance === 0 });
+
   // Отправляем список комнат при подключении
   socket.emit('roomsList', getRoomsList());
 
@@ -2047,11 +2059,21 @@ io.on('connection', (socket) => {
       return;
     }
     
+    // Получаем баланс фишек
+    const chipsData = playerChips.get(socket.id);
+    if (!chipsData || chipsData.balance === 0) {
+      socket.emit('blackjack-error', 'Сначала купите фишки в главном меню');
+      return;
+    }
+    
     // Создаем или получаем игру
     let game = blackjackGames.get(socket.id);
     if (!game) {
       game = new BlackJackGame(socket.id, playerName);
+      game.balance = chipsData.balance; // Устанавливаем баланс из фишек
       blackjackGames.set(socket.id, game);
+    } else {
+      game.balance = chipsData.balance; // Обновляем баланс
     }
     
     socket.emit('blackjack-state', game.getGameState());
@@ -2067,7 +2089,13 @@ io.on('connection', (socket) => {
     }
     
     if (game.placeBet(amount)) {
+      // Обновляем баланс фишек
+      const chipsData = playerChips.get(socket.id);
+      if (chipsData) {
+        chipsData.balance = game.balance;
+      }
       socket.emit('blackjack-state', game.getGameState());
+      socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
     } else {
       socket.emit('blackjack-error', 'Неверная ставка');
     }
@@ -2081,7 +2109,13 @@ io.on('connection', (socket) => {
     }
     
     game.hit();
+    // Обновляем баланс фишек
+    const chipsData = playerChips.get(socket.id);
+    if (chipsData) {
+      chipsData.balance = game.balance;
+    }
     socket.emit('blackjack-state', game.getGameState());
+    socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
   });
 
   socket.on('blackjack-stand', () => {
@@ -2092,7 +2126,13 @@ io.on('connection', (socket) => {
     }
     
     game.stand();
+    // Обновляем баланс фишек
+    const chipsData = playerChips.get(socket.id);
+    if (chipsData) {
+      chipsData.balance = game.balance;
+    }
     socket.emit('blackjack-state', game.getGameState());
+    socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
   });
 
   socket.on('blackjack-double', () => {
@@ -2103,7 +2143,13 @@ io.on('connection', (socket) => {
     }
     
     if (game.doubleDown()) {
+      // Обновляем баланс фишек
+      const chipsData = playerChips.get(socket.id);
+      if (chipsData) {
+        chipsData.balance = game.balance;
+      }
       socket.emit('blackjack-state', game.getGameState());
+      socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
     } else {
       socket.emit('blackjack-error', 'Нельзя удвоить ставку');
     }
@@ -2147,12 +2193,23 @@ io.on('connection', (socket) => {
     }
     
     if (game.placeBet(amount, choice)) {
+      // Обновляем баланс фишек
+      const chipsData = playerChips.get(socket.id);
+      if (chipsData) {
+        chipsData.balance = game.balance;
+      }
       // Отправляем состояние сразу
       socket.emit('coinflip-state', game.getGameState());
+      socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
       
       // Отправляем результат после подбрасывания
       setTimeout(() => {
+        // Обновляем баланс после результата
+        if (chipsData) {
+          chipsData.balance = game.balance;
+        }
         socket.emit('coinflip-state', game.getGameState());
+        socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
       }, 2000);
     } else {
       socket.emit('coinflip-error', 'Неверная ставка');
@@ -2178,10 +2235,20 @@ io.on('connection', (socket) => {
       return;
     }
     
+    // Получаем баланс фишек
+    const chipsData = playerChips.get(socket.id);
+    if (!chipsData || chipsData.balance === 0) {
+      socket.emit('slots-error', 'Сначала купите фишки в главном меню');
+      return;
+    }
+    
     let game = slotsGames.get(socket.id);
     if (!game) {
       game = new SlotsGame(socket.id, playerName);
+      game.balance = chipsData.balance;
       slotsGames.set(socket.id, game);
+    } else {
+      game.balance = chipsData.balance;
     }
     
     socket.emit('slots-state', game.getGameState());
@@ -2197,12 +2264,23 @@ io.on('connection', (socket) => {
     }
     
     if (game.placeBet(amount)) {
+      // Обновляем баланс фишек
+      const chipsData = playerChips.get(socket.id);
+      if (chipsData) {
+        chipsData.balance = game.balance;
+      }
       // Отправляем состояние сразу (spinning)
       socket.emit('slots-state', game.getGameState());
+      socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
       
       // Отправляем результат после кручения
       setTimeout(() => {
+        // Обновляем баланс после результата
+        if (chipsData) {
+          chipsData.balance = game.balance;
+        }
         socket.emit('slots-state', game.getGameState());
+        socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
       }, 3000);
     } else {
       socket.emit('slots-error', 'Неверная ставка');
@@ -2228,10 +2306,20 @@ io.on('connection', (socket) => {
       return;
     }
     
+    // Получаем баланс фишек
+    const chipsData = playerChips.get(socket.id);
+    if (!chipsData || chipsData.balance === 0) {
+      socket.emit('rps-error', 'Сначала купите фишки в главном меню');
+      return;
+    }
+    
     let game = rpsGames.get(socket.id);
     if (!game) {
       game = new RPSGame(socket.id, playerName);
+      game.balance = chipsData.balance;
       rpsGames.set(socket.id, game);
+    } else {
+      game.balance = chipsData.balance;
     }
     
     socket.emit('rps-state', game.getGameState());
@@ -2247,7 +2335,13 @@ io.on('connection', (socket) => {
     }
     
     if (game.placeBet(amount)) {
+      // Обновляем баланс фишек
+      const chipsData = playerChips.get(socket.id);
+      if (chipsData) {
+        chipsData.balance = game.balance;
+      }
       socket.emit('rps-state', game.getGameState());
+      socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
     } else {
       socket.emit('rps-error', 'Неверная ставка');
     }
@@ -2263,7 +2357,13 @@ io.on('connection', (socket) => {
     }
     
     if (game.makeChoice(choice)) {
+      // Обновляем баланс фишек
+      const chipsData = playerChips.get(socket.id);
+      if (chipsData) {
+        chipsData.balance = game.balance;
+      }
       socket.emit('rps-state', game.getGameState());
+      socket.emit('chips-balance', { balance: game.balance, needsPurchase: false });
     } else {
       socket.emit('rps-error', 'Неверный выбор');
     }
