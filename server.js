@@ -28,6 +28,16 @@ app.get('/start', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'launcher-simple.html'));
 });
 
+// Роут для главного меню казино
+app.get('/casino', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'casino.html'));
+});
+
+// Роут для Black Jack
+app.get('/blackjack', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'blackjack.html'));
+});
+
 // API для управления сервером
 app.get('/api/status', (req, res) => {
     // Проверяем, запущен ли основной сервер (этот процесс)
@@ -621,6 +631,9 @@ app.post('/api/start-docker', (req, res) => {
 const rooms = new Map();
 // Таймеры для комнат
 const roomTimers = new Map();
+// Black Jack игры
+const blackjackGames = new Map();
+const BlackJackGame = require('./blackjack-game');
 
 // Игровая логика
 class PokerGame {
@@ -2030,6 +2043,10 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('Player disconnected:', socket.id);
+    
+    // Удаляем игру Black Jack при отключении
+    blackjackGames.delete(socket.id);
+    
     rooms.forEach((game, roomId) => {
       const player = game.players.find(p => p.id === socket.id);
       if (player) {

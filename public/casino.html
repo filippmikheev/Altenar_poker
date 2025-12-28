@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>🎰 Казино - Выбор игры</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎰</text></svg>">
+</head>
+<body>
+    <div class="casino-lobby">
+        <div class="casino-header">
+            <h1>🎰 Казино</h1>
+            <p class="casino-subtitle">Выберите игру</p>
+        </div>
+
+        <div class="games-grid">
+            <!-- Покер -->
+            <div class="game-card" data-game="poker">
+                <div class="game-icon">🃏</div>
+                <h2>Texas Hold'em</h2>
+                <p class="game-description">Классический покер с друзьями</p>
+                <div class="game-features">
+                    <span class="feature">👥 До 6 игроков</span>
+                    <span class="feature">🤖 ИИ-боты</span>
+                </div>
+                <button class="play-btn">Играть</button>
+            </div>
+
+            <!-- Black Jack -->
+            <div class="game-card" data-game="blackjack">
+                <div class="game-icon">🃎</div>
+                <h2>Black Jack</h2>
+                <p class="game-description">21 - классическая карточная игра</p>
+                <div class="game-features">
+                    <span class="feature">🎯 Против дилера</span>
+                    <span class="feature">💰 Ставки</span>
+                </div>
+                <button class="play-btn">Играть</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Переход к играм
+        document.querySelectorAll('.play-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const gameCard = this.closest('.game-card');
+                const game = gameCard.dataset.game;
+                
+                if (game === 'poker') {
+                    window.location.href = '/';
+                } else if (game === 'blackjack') {
+                    window.location.href = '/blackjack.html';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+

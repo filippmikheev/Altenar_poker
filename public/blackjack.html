@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>🃎 Black Jack - 21</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃎</text></svg>">
+</head>
+<body>
+    <div class="blackjack-container">
+        <!-- Заголовок -->
+        <div class="blackjack-header">
+            <button class="back-btn" onclick="window.location.href='/casino'">← Назад</button>
+            <h1>🃎 Black Jack</h1>
+            <div class="balance-display">
+                💰 <span id="balance">1000</span>
+            </div>
+        </div>
+
+        <!-- Дилер -->
+        <div class="dealer-section">
+            <div class="dealer-label">Дилер</div>
+            <div class="dealer-score" id="dealerScore">?</div>
+            <div class="cards-container" id="dealerCards"></div>
+        </div>
+
+        <!-- Игрок -->
+        <div class="player-section">
+            <div class="player-label" id="playerName">Игрок</div>
+            <div class="player-score" id="playerScore">0</div>
+            <div class="cards-container" id="playerCards"></div>
+        </div>
+
+        <!-- Ставка -->
+        <div class="bet-section" id="betSection">
+            <h3>Разместите ставку</h3>
+            <div class="bet-amounts">
+                <button class="bet-btn" data-amount="10">10</button>
+                <button class="bet-btn" data-amount="25">25</button>
+                <button class="bet-btn" data-amount="50">50</button>
+                <button class="bet-btn" data-amount="100">100</button>
+                <button class="bet-btn" data-amount="250">250</button>
+                <button class="bet-btn" data-amount="500">500</button>
+            </div>
+            <div class="custom-bet">
+                <input type="number" id="customBetAmount" placeholder="Своя ставка" min="1">
+                <button class="bet-btn" id="customBetBtn">Поставить</button>
+            </div>
+            <div class="current-bet" id="currentBetDisplay" style="display: none;">
+                Ставка: <span id="currentBet">0</span>
+            </div>
+        </div>
+
+        <!-- Действия -->
+        <div class="actions-section" id="actionsSection" style="display: none;">
+            <button id="hitBtn" class="action-btn-blackjack hit">Взять карту</button>
+            <button id="standBtn" class="action-btn-blackjack stand">Остановиться</button>
+            <button id="doubleBtn" class="action-btn-blackjack double">Удвоить</button>
+        </div>
+
+        <!-- Результат -->
+        <div class="result-section" id="resultSection" style="display: none;">
+            <div class="result-message" id="resultMessage"></div>
+            <div class="winnings" id="winningsDisplay"></div>
+            <button id="newGameBtn" class="action-btn-blackjack new-game">Новая игра</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="blackjack.js"></script>
+</body>
+</html>
+
