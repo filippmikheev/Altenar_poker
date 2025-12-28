@@ -1,0 +1,14 @@
+node_modules/
+.env
+.DS_Store
+*.log
+.vscode/
+.idea/
+.ngrok-token
+PUBLIC_URL.txt
+URL_ДЛЯ_ДРУЗЕЙ.txt
+cloudflare-tunnel.log
+cloudflare-tunnel-error.log
+*.bat
+*.ps1
+*.sh

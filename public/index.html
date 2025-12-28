@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎰 Веб Покер - Игра с друзьями</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎰</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <!-- ЛОББИ -->
+        <div class="lobby-screen" id="lobbyScreen">
+            <h1>🎰 Веб Покер</h1>
+            <div class="lobby-tabs">
+                <button class="tab-btn active" id="roomsTabBtn">🏠 Все столы</button>
+                <button class="tab-btn" id="joinTabBtn">🚪 Присоединиться</button>
+            </div>
+            
+            <div class="tab-content active" id="roomsTab">
+                <div class="rooms-list" id="roomsList">
+                    <div class="loading">⏳ Загрузка столов...</div>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                    <button id="refreshRoomsBtn" class="refresh-btn">🔄 Обновить список</button>
+                    <button id="createTestTableBtnFromRooms" class="test-table-btn" style="padding: 15px 25px;">🧪 Создать тестовый стол</button>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="joinTab">
+                <div class="lobby-form">
+                    <input type="text" id="playerName" placeholder="👤 Ваше имя" maxlength="15" autocomplete="off">
+                    <input type="text" id="roomId" placeholder="🔑 ID комнаты (или оставьте пустым)" maxlength="10" autocomplete="off">
+                    <button id="joinBtn">🚀 Присоединиться</button>
+                    <button id="createBtn">✨ Создать новый стол</button>
+                    <button id="createTestTableBtn" class="test-table-btn">🧪 Создать тестовый стол</button>
+                </div>
+                <div id="roomInfo" class="room-info"></div>
+            </div>
+        </div>
+
+        <!-- ИГРОВОЙ ЭКРАН -->
+        <div class="game-screen" id="gameScreen" style="display: none;">
+            <div class="game-header">
+                <h2>🎰 Стол: <span id="roomName"></span></h2>
+                <div class="header-right">
+                    <div id="gameStatus" class="room-state">⏳ Ожидание</div>
+                    <div class="pot-display">
+                        💰 Банк: <span id="potAmount">0</span>
+                    </div>
+                    <div class="timer-display" id="timerDisplay" style="display: none;">
+                        ⏱️ <span id="timeLeft">30</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ПОКЕРНЫЙ СТОЛ -->
+            <div class="game-table-wrapper">
+                <div class="game-table">
+                    <div class="table-center">
+                        <div class="pot-area">
+                            <div class="pot-label">Банк</div>
+                            <div class="pot-value" id="potValue">0</div>
+                        </div>
+                        <div class="community-cards" id="communityCards"></div>
+                    </div>
+                    <div class="players-container" id="playersContainer"></div>
+                </div>
+            </div>
+
+            <!-- ВАШИ КАРТЫ -->
+            <div class="player-hand" id="playerHand"></div>
+
+            <!-- ПАНЕЛЬ ДЕЙСТВИЙ -->
+            <div class="action-panel" id="actionPanel">
+                <div class="player-info">
+                    <div class="info-row">
+                        <span>💰 Ваши фишки:</span>
+                        <span id="playerChips">1000</span>
+                    </div>
+                    <div class="info-row">
+                        <span>🎯 Ваша ставка:</span>
+                        <span id="playerBet">0</span>
+                    </div>
+                    <div class="info-row">
+                        <span>💵 Куплено:</span>
+                        <span id="playerBuyIn">1000</span>
+                    </div>
+                    <div class="info-row">
+                        <span>📊 Прибыль:</span>
+                        <span id="playerProfit">0</span>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button id="foldBtn" class="action-btn fold" disabled>❌ Пас</button>
+                    <button id="callBtn" class="action-btn call" disabled>✔️ Колл</button>
+                    <div class="raise-section">
+                        <input type="number" id="raiseAmount" placeholder="Сумма" min="0">
+                        <button id="raiseBtn" class="action-btn raise" disabled>⬆️ Рейз</button>
+                    </div>
+                    <button id="allInBtn" class="action-btn allin" disabled>🔥 ALL-IN</button>
+                </div>
+            </div>
+
+            <!-- ТАБЛИЦА ЛИДЕРОВ -->
+            <div class="leaderboard" id="leaderboard">
+                <h3>🏆 Таблица лидеров</h3>
+                <div class="leaderboard-list" id="leaderboardList"></div>
+            </div>
+
+            <!-- УПРАВЛЕНИЕ ИГРОЙ -->
+            <div class="game-controls">
+                <button id="addBotBtn" style="display: none;">🤖 Добавить бота</button>
+                <button id="startGameBtn">🎮 Начать игру</button>
+                <button id="nextHandBtn" style="display: none;">🃏 Следующая раздача</button>
+                <div class="buy-in-controls" id="buyInControls" style="display: none;">
+                    <input type="number" id="buyInAmount" placeholder="Сумма" min="100" value="1000">
+                    <button id="buyChipsBtn">💵 Докупить фишки</button>
+                </div>
+                <div class="admin-controls" id="adminControls" style="display: none;">
+                    <label>
+                        <input type="checkbox" id="allowBuyInCheck"> 
+                        Разрешить докупку фишек
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- МОДАЛЬНОЕ ОКНО РЕЗУЛЬТАТОВ -->
+        <div class="results-modal" id="resultsModal" style="display: none;">
+            <div class="results-content">
+                <h2>🎉 Результаты раздачи</h2>
+                <div id="resultsContent"></div>
+                <button id="closeResultsBtn" class="close-results-btn">✔️ Закрыть</button>
+            </div>
+        </div>
+
+        <!-- МОДАЛЬНОЕ ОКНО ТЕСТОВОГО СТОЛА -->
+        <div class="results-modal" id="testTableModal" style="display: none;">
+            <div class="results-content" style="max-width: 500px;">
+                <h2>🧪 Настройка тестового стола</h2>
+                <div style="padding: 20px;">
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; color: var(--text-light);">
+                            👤 Количество тестовых игроков (0-4):
+                        </label>
+                        <input type="number" id="testPlayersCount" min="0" max="4" value="2" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; font-size: 1.1em;">
+                        <div style="font-size: 0.9em; color: #888; margin-top: 5px;">
+                            ⏱️ Каждый игрок думает 15 секунд
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: flex; align-items: center; color: var(--text-light);">
+                            <input type="checkbox" id="addAIBot" checked style="margin-right: 10px; width: 20px; height: 20px;">
+                            <span>🤖 Добавить ИИ-бота</span>
+                        </label>
+                        <div style="font-size: 0.9em; color: #888; margin-top: 5px; margin-left: 30px;">
+                            ⏱️ Бот думает 2 секунды
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; color: var(--text-light);">
+                            💰 Стартовые фишки:
+                        </label>
+                        <input type="number" id="testStartingChips" min="100" value="1000" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; font-size: 1.1em;">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button id="createTestTableConfirmBtn" class="close-results-btn" style="background: linear-gradient(135deg, #27ae60, #2ecc71);">✅ Создать</button>
+                    <button id="cancelTestTableBtn" class="close-results-btn" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">❌ Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

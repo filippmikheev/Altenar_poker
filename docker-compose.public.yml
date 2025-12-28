@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # Основной сервер покера
+  poker:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
+    restart: unless-stopped
+    networks:
+      - poker-network
+
+  # Cloudflare Tunnel (не требует регистрации)
+  cloudflare-tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --url http://poker:3000
+    depends_on:
+      - poker
+    restart: unless-stopped
+    networks:
+      - poker-network
+    # URL будет в логах: docker-compose logs cloudflare-tunnel
+
+  # LocalTunnel (альтернатива, не требует регистрации)
+  localtunnel:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install -g localtunnel && lt --port 3000 --subdomain poker-game"
+    depends_on:
+      - poker
+    restart: unless-stopped
+    networks:
+      - poker-network
+    # URL будет: https://poker-game.loca.lt
+
+networks:
+  poker-network:
+    driver: bridge
+

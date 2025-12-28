@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  poker:
+    build:
+      context: .
+      dockerfile: Dockerfile.ngrok
+    ports:
+      - "3000:3000"
+      - "4040:4040"  # ngrok веб-интерфейс
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
+      - NGROK_TOKEN=${NGROK_TOKEN:-}
+    restart: unless-stopped
+    volumes:
+      - ./public:/app/public
+    # Если токен не указан, ngrok не запустится, только сервер
+

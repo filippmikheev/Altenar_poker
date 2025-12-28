@@ -1,0 +1,29 @@
+# Dockerfile с ngrok
+FROM node:20-alpine
+
+# Устанавливаем ngrok
+RUN apk add --no-cache curl unzip && \
+    curl -Lo /tmp/ngrok.zip https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.zip && \
+    unzip /tmp/ngrok.zip -d /usr/local/bin && \
+    chmod +x /usr/local/bin/ngrok && \
+    rm /tmp/ngrok.zip
+
+# Рабочая директория
+WORKDIR /app
+
+# Копируем package.json и устанавливаем зависимости
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Копируем исходный код
+COPY . .
+
+# Порт приложения
+EXPOSE 3000 4040
+
+# Скрипт запуска
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+

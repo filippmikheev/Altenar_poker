@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎰 Запуск покерного сервера</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #ffd700;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(255, 215, 0, 0.5);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .status-panel {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status-label {
+            color: #aaa;
+            font-size: 1em;
+        }
+        
+        .status-value {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .status-running {
+            color: #2ecc71;
+        }
+        
+        .status-stopped {
+            color: #e74c3c;
+        }
+        
+        .status-waiting {
+            color: #f39c12;
+        }
+        
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 18px 25px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+        
+        .btn-purple {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+        }
+        
+        .btn-full {
+            grid-column: 1 / -1;
+        }
+        
+        .url-display {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            display: none;
+        }
+        
+        .url-display.show {
+            display: block;
+        }
+        
+        .url-label {
+            color: #aaa;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        
+        .url-value {
+            color: #ffd700;
+            font-size: 1.3em;
+            font-weight: bold;
+            word-break: break-all;
+            margin-bottom: 15px;
+            font-family: monospace;
+        }
+        
+        .copy-btn {
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            color: #1a1a2e;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+        }
+        
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+        }
+        
+        .log-area {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            display: none;
+        }
+        
+        .log-area.show {
+            display: block;
+        }
+        
+        .log-entry {
+            padding: 5px 0;
+            color: #aaa;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .log-info {
+            color: #3498db;
+        }
+        
+        .log-success {
+            color: #2ecc71;
+        }
+        
+        .log-error {
+            color: #e74c3c;
+        }
+        
+        .toggle-log {
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .toggle-log-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #aaa;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        
+        .toggle-log-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+        }
+        
+        .modal-content h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .modal-content input {
+            font-family: inherit;
+        }
+        
+        .modal-content a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        
+        .modal-content a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎰 Покерный сервер</h1>
+        <p class="subtitle">Управление сервером для игры с друзьями</p>
+        
+        <div class="status-panel">
+            <div class="status-item">
+                <span class="status-label">📡 Сервер:</span>
+                <span class="status-value" id="serverStatus">Проверка...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">🌐 Туннель:</span>
+                <span class="status-value" id="tunnelStatus">Не запущен</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">🔗 Публичный URL:</span>
+                <span class="status-value" id="publicUrlStatus">-</span>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button class="btn btn-primary" id="startServerBtn">
+                ▶️ Запустить сервер
+            </button>
+            <button class="btn btn-danger" id="stopServerBtn" disabled>
+                ⏹️ Остановить сервер
+            </button>
+            <button class="btn btn-purple" id="startTunnelBtn" disabled>
+                🌐 Запустить туннель
+            </button>
+            <button class="btn btn-danger" id="stopTunnelBtn" disabled>
+                ⏹️ Остановить туннель
+            </button>
+            <button class="btn btn-secondary btn-full" id="openGameBtn" disabled>
+                🎮 Открыть игру в браузере
+            </button>
+        </div>
+        
+        <div class="url-display" id="urlDisplay">
+            <div class="url-label">🌐 Публичный URL (отправьте друзьям):</div>
+            <div class="url-value" id="publicUrl">-</div>
+            <button class="copy-btn" id="copyUrlBtn">📋 Копировать URL</button>
+        </div>
+        
+        <div class="toggle-log">
+            <button class="toggle-log-btn" id="toggleLogBtn">📋 Показать лог</button>
+            <button class="toggle-log-btn" id="settingsBtn" style="margin-left: 10px;">⚙️ Настройки ngrok</button>
+        </div>
+        
+        <div class="log-area" id="logArea"></div>
+    </div>
+    
+    <!-- Модальное окно настроек -->
+    <div class="modal" id="settingsModal" style="display: none;">
+        <div class="modal-content">
+            <h2>⚙️ Настройки ngrok</h2>
+            <div style="margin: 20px 0;">
+                <label style="display: block; margin-bottom: 10px; color: #aaa;">
+                    🔑 Ngrok токен:
+                </label>
+                <input type="text" id="ngrokTokenInput" placeholder="Введите ваш ngrok токен" 
+                       style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; font-size: 1em;">
+                <div style="margin-top: 10px; font-size: 0.9em; color: #888;">
+                    Получить токен: <a href="https://dashboard.ngrok.com/get-started/your-authtoken" target="_blank" style="color: #3498db;">https://dashboard.ngrok.com/get-started/your-authtoken</a>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn btn-primary" id="saveTokenBtn">💾 Сохранить</button>
+                <button class="btn btn-danger" id="cancelSettingsBtn">❌ Отмена</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let serverRunning = false;
+        let tunnelRunning = false;
+        let publicUrl = null;
+        let checkInterval = null;
+        
+        const startServerBtn = document.getElementById('startServerBtn');
+        const stopServerBtn = document.getElementById('stopServerBtn');
+        const startTunnelBtn = document.getElementById('startTunnelBtn');
+        const stopTunnelBtn = document.getElementById('stopTunnelBtn');
+        const openGameBtn = document.getElementById('openGameBtn');
+        const copyUrlBtn = document.getElementById('copyUrlBtn');
+        const toggleLogBtn = document.getElementById('toggleLogBtn');
+        const logArea = document.getElementById('logArea');
+        const urlDisplay = document.getElementById('urlDisplay');
+        const publicUrlElement = document.getElementById('publicUrl');
+        
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+        
+        function updateStatus() {
+            // Проверяем сервер
+            fetch('/api/status')
+                .then(res => res.json())
+                .then(data => {
+                    const serverStatusEl = document.getElementById('serverStatus');
+                    const tunnelStatusEl = document.getElementById('tunnelStatus');
+                    const publicUrlStatusEl = document.getElementById('publicUrlStatus');
+                    
+                    serverRunning = data.serverRunning || false;
+                    tunnelRunning = data.tunnelRunning || false;
+                    publicUrl = data.publicUrl || null;
+                    
+                    // Обновляем статусы
+                    serverStatusEl.textContent = serverRunning ? 'Запущен' : 'Остановлен';
+                    serverStatusEl.className = `status-value ${serverRunning ? 'status-running' : 'status-stopped'}`;
+                    
+                    tunnelStatusEl.textContent = tunnelRunning ? 'Запущен' : 'Не запущен';
+                    tunnelStatusEl.className = `status-value ${tunnelRunning ? 'status-running' : 'status-stopped'}`;
+                    
+                    publicUrlStatusEl.textContent = publicUrl || '-';
+                    publicUrlStatusEl.className = `status-value ${publicUrl ? 'status-running' : ''}`;
+                    
+                    // Обновляем кнопки
+                    startServerBtn.disabled = serverRunning;
+                    stopServerBtn.disabled = !serverRunning;
+                    startTunnelBtn.disabled = !serverRunning;
+                    stopTunnelBtn.disabled = !tunnelRunning;
+                    openGameBtn.disabled = !serverRunning;
+                    
+                    // Показываем URL
+                    if (publicUrl) {
+                        urlDisplay.classList.add('show');
+                        publicUrlElement.textContent = publicUrl;
+                    } else {
+                        urlDisplay.classList.remove('show');
+                    }
+                })
+                .catch(err => {
+                    log('Ошибка проверки статуса: ' + err.message, 'error');
+                });
+        }
+        
+        startServerBtn.addEventListener('click', () => {
+            log('Запуск сервера...', 'info');
+            fetch('/api/start-server', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        log('Сервер запущен!', 'success');
+                        updateStatus();
+                    } else {
+                        log('Ошибка запуска: ' + data.error, 'error');
+                    }
+                })
+                .catch(err => {
+                    log('Ошибка: ' + err.message, 'error');
+                });
+        });
+        
+        stopServerBtn.addEventListener('click', () => {
+            log('Остановка сервера...', 'info');
+            fetch('/api/stop-server', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        log('Сервер остановлен', 'success');
+                        updateStatus();
+                    } else {
+                        log('Ошибка остановки: ' + data.error, 'error');
+                    }
+                })
+                .catch(err => {
+                    log('Ошибка: ' + err.message, 'error');
+                });
+        });
+        
+        startTunnelBtn.addEventListener('click', () => {
+            log('Запуск туннеля...', 'info');
+            fetch('/api/start-tunnel', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        log('Туннель запущен!', 'success');
+                        setTimeout(updateStatus, 3000);
+                    } else {
+                        log('Ошибка запуска: ' + data.error, 'error');
+                    }
+                })
+                .catch(err => {
+                    log('Ошибка: ' + err.message, 'error');
+                });
+        });
+        
+        stopTunnelBtn.addEventListener('click', () => {
+            log('Остановка туннеля...', 'info');
+            fetch('/api/stop-tunnel', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        log('Туннель остановлен', 'success');
+                        updateStatus();
+                    } else {
+                        log('Ошибка остановки: ' + data.error, 'error');
+                    }
+                })
+                .catch(err => {
+                    log('Ошибка: ' + err.message, 'error');
+                });
+        });
+        
+        openGameBtn.addEventListener('click', () => {
+            window.open('http://localhost:3000', '_blank');
+        });
+        
+        copyUrlBtn.addEventListener('click', () => {
+            if (publicUrl) {
+                navigator.clipboard.writeText(publicUrl).then(() => {
+                    copyUrlBtn.textContent = '✅ Скопировано!';
+                    setTimeout(() => {
+                        copyUrlBtn.textContent = '📋 Копировать URL';
+                    }, 2000);
+                });
+            }
+        });
+        
+        toggleLogBtn.addEventListener('click', () => {
+            logArea.classList.toggle('show');
+            toggleLogBtn.textContent = logArea.classList.contains('show') ? '📋 Скрыть лог' : '📋 Показать лог';
+        });
+        
+        // Настройки ngrok
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsModal = document.getElementById('settingsModal');
+        const ngrokTokenInput = document.getElementById('ngrokTokenInput');
+        const saveTokenBtn = document.getElementById('saveTokenBtn');
+        const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
+        
+        // Загружаем сохраненный токен
+        fetch('/api/ngrok-token')
+            .then(res => res.json())
+            .then(data => {
+                if (data.token) {
+                    ngrokTokenInput.value = data.token;
+                }
+            })
+            .catch(() => {});
+        
+        settingsBtn.addEventListener('click', () => {
+            settingsModal.style.display = 'flex';
+        });
+        
+        cancelSettingsBtn.addEventListener('click', () => {
+            settingsModal.style.display = 'none';
+        });
+        
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) {
+                settingsModal.style.display = 'none';
+            }
+        });
+        
+        saveTokenBtn.addEventListener('click', () => {
+            const token = ngrokTokenInput.value.trim();
+            if (!token) {
+                alert('Введите токен!');
+                return;
+            }
+            
+            log('Сохранение ngrok токена...', 'info');
+            fetch('/api/ngrok-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    log('Токен сохранен!', 'success');
+                    settingsModal.style.display = 'none';
+                    // Пытаемся настроить ngrok
+                    fetch('/api/setup-ngrok', { method: 'POST' })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                log('ngrok настроен!', 'success');
+                            } else {
+                                log('Ошибка настройки: ' + data.error, 'error');
+                            }
+                        });
+                } else {
+                    log('Ошибка сохранения: ' + data.error, 'error');
+                }
+            })
+            .catch(err => {
+                log('Ошибка: ' + err.message, 'error');
+            });
+        });
+        
+        // Проверяем статус каждые 2 секунды
+        updateStatus();
+        checkInterval = setInterval(updateStatus, 2000);
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,58 @@
+═══════════════════════════════════════════════════════════
+  🐳 ЗАПУСК С ПУБЛИЧНЫМ ДОСТУПОМ ЧЕРЕЗ DOCKER
+═══════════════════════════════════════════════════════════
+
+📋 БЫСТРЫЙ СТАРТ (РЕКОМЕНДУЕТСЯ):
+
+1. Запустите: start-cloudflare.bat
+   (Cloudflare Tunnel - не требует регистрации)
+
+2. Подождите 10-15 секунд
+
+3. URL будет в файле: PUBLIC_URL.txt
+   или в логах: docker-compose logs cloudflare-tunnel
+
+═══════════════════════════════════════════════════════════
+
+🔧 ВАРИАНТЫ ЗАПУСКА:
+
+1. Cloudflare Tunnel (РЕКОМЕНДУЕТСЯ)
+   - Не требует регистрации
+   - Работает сразу
+   - Команда: start-cloudflare.bat
+
+2. LocalTunnel
+   - Не требует регистрации
+   - URL: https://poker-game.loca.lt
+   - Команда: start-docker-public.bat (выберите вариант 2)
+
+3. Ngrok
+   - Требует токен
+   - Команда: start-docker-public.bat (выберите вариант 3)
+
+═══════════════════════════════════════════════════════════
+
+📋 КОМАНДЫ:
+
+Запуск:
+  start-cloudflare.bat
+
+Просмотр логов:
+  docker-compose -f docker-compose.public.yml logs -f cloudflare-tunnel
+
+Остановка:
+  docker-compose -f docker-compose.public.yml down
+
+Получить URL:
+  docker-compose -f docker-compose.public.yml logs cloudflare-tunnel | findstr "https://"
+
+═══════════════════════════════════════════════════════════
+
+⚠️ ВАЖНО:
+
+✅ Docker Desktop должен быть запущен
+✅ Порт 3000 не должен быть занят
+✅ URL будет в логах или в файле PUBLIC_URL.txt
+
+═══════════════════════════════════════════════════════════
+
