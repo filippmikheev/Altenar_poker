@@ -1922,7 +1922,37 @@ io.on('connection', (socket) => {
     const { roomId, amount } = data;
     const game = rooms.get(roomId);
     
-    if (game && game.buyChips(socket.id, amount)) {
+    if (!game) {
+      socket.emit('error', 'Комната не найдена');
+      return;
+    }
+    
+    // Находим игрока
+    const player = game.players.find(p => p.id === socket.id);
+    if (!player) {
+      socket.emit('error', 'Игрок не найден');
+      return;
+    }
+    
+    // Проверяем разрешение на докупку
+    const playerData = playersData.get(player.name);
+    if (!playerData || !playerData.canBuyIn) {
+      socket.emit('error', 'Докупка фишек запрещена администратором');
+      return;
+    }
+    
+    // Проверяем разрешение админа комнаты (если установлено)
+    if (!game.allowedBuyIn) {
+      socket.emit('error', 'Докупка фишек запрещена администратором стола');
+      return;
+    }
+    
+    // Выполняем докупку
+    if (game.buyChips(socket.id, amount)) {
+      // Обновляем баланс в playersData
+      if (playerData) {
+        playerData.chips = player.chips;
+      }
       io.to(roomId).emit('gameState', game.getGameState());
     }
   });
@@ -2105,7 +2135,8 @@ io.on('connection', (socket) => {
       name,
       chips: data.chips,
       isAdmin: data.isAdmin,
-      isOnline: data.socketId !== null
+      isOnline: data.socketId !== null,
+      canBuyIn: data.canBuyIn !== false // По умолчанию разрешено
     }));
     socket.emit('admin-players-list', playersList);
   });
@@ -2143,6 +2174,27 @@ io.on('connection', (socket) => {
     });
     
     socket.emit('admin-success', `Фишки игрока ${playerName} установлены: ${newChips}`);
+    socket.emit('admin-get-players'); // Обновляем список
+  });
+
+  socket.on('admin-set-buyin-permission', (data) => {
+    const { playerName, canBuyIn } = data;
+    
+    // Проверяем админскую сессию
+    if (!adminSessions.has(socket.id)) {
+      socket.emit('admin-error', 'Доступ запрещен. Войдите в админ-панель.');
+      return;
+    }
+    
+    if (!playersData.has(playerName)) {
+      socket.emit('admin-error', 'Игрок не найден.');
+      return;
+    }
+    
+    const playerData = playersData.get(playerName);
+    playerData.canBuyIn = canBuyIn;
+    
+    socket.emit('admin-success', `Разрешение на докупку для ${playerName}: ${canBuyIn ? 'разрешено' : 'запрещено'}`);
     socket.emit('admin-get-players'); // Обновляем список
   });
 
