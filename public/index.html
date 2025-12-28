@@ -21,6 +21,19 @@
             </div>
         </div>
 
+        <!-- Модальное окно ввода имени -->
+        <div class="chips-modal" id="nameModal" style="display: none;">
+            <div class="chips-modal-content">
+                <h2>👤 Введите ваше имя</h2>
+                <p>Выберите уникальное имя для игры:</p>
+                <div class="name-input-section">
+                    <input type="text" id="playerNameInput" placeholder="Ваше имя" maxlength="20" autocomplete="off" autofocus>
+                    <div id="nameError" class="error-message" style="display: none; color: #e74c3c; margin-top: 10px;"></div>
+                </div>
+                <button class="chips-amount-btn" id="setNameBtn" style="margin-top: 20px; width: 100%;">Продолжить</button>
+            </div>
+        </div>
+
         <!-- Модальное окно покупки фишек -->
         <div class="chips-modal" id="chipsModal" style="display: none;">
             <div class="chips-modal-content">

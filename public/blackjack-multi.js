@@ -65,15 +65,29 @@ socket.on('blackjack-multi-error', (message) => {
     alert(message);
 });
 
+// Получение имени при подключении
+socket.on('chips-balance', (data) => {
+    if (data.playerName) {
+        playerName = data.playerName;
+        if (playerNameInput) {
+            playerNameInput.value = playerName;
+            playerNameInput.disabled = true;
+        }
+    }
+});
+
+socket.on('connect', () => {
+    socket.emit('chips-get-balance');
+});
+
 // Создание комнаты
 if (createBtn) {
     createBtn.addEventListener('click', () => {
-        const name = playerNameInput.value.trim();
-        if (!name) {
-            alert('Введите ваше имя');
+        if (!playerName) {
+            alert('Сначала введите ваше имя в главном меню');
+            window.location.href = '/';
             return;
         }
-        playerName = name;
         const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
         socket.emit('blackjack-multi-create', roomId);
     });
@@ -82,18 +96,17 @@ if (createBtn) {
 // Присоединение к комнате
 if (joinBtn) {
     joinBtn.addEventListener('click', () => {
-        const name = playerNameInput.value.trim();
-        const roomId = roomIdInput.value.trim().toUpperCase();
-        if (!name) {
-            alert('Введите ваше имя');
+        if (!playerName) {
+            alert('Сначала введите ваше имя в главном меню');
+            window.location.href = '/';
             return;
         }
+        const roomId = roomIdInput.value.trim().toUpperCase();
         if (!roomId) {
             alert('Введите ID комнаты');
             return;
         }
-        playerName = name;
-        socket.emit('blackjack-multi-join', { roomId, playerName });
+        socket.emit('blackjack-multi-join', { roomId });
     });
 }
 
@@ -198,14 +211,13 @@ function updateRoomsList(rooms) {
 }
 
 function joinRoom(roomId) {
-    const name = playerNameInput.value.trim();
-    if (!name) {
-        alert('Введите ваше имя');
+    if (!playerName) {
+        alert('Сначала введите ваше имя в главном меню');
+        window.location.href = '/';
         return;
     }
-    playerName = name;
     roomIdInput.value = roomId;
-    socket.emit('blackjack-multi-join', { roomId, playerName });
+    socket.emit('blackjack-multi-join', { roomId });
 }
 
 // Действия

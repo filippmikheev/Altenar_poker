@@ -34,18 +34,19 @@ socket.on('chips-balance', (data) => {
     }
 });
 
-// Запрос имени при загрузке
+// Получение имени и баланса при загрузке
 window.addEventListener('load', () => {
-    const name = prompt('Введите ваше имя:');
-    if (name && name.trim()) {
-        playerName = name.trim();
-        socket.emit('rps-join', { playerName });
-    } else {
-        socket.emit('rps-join', { playerName: 'Игрок' });
-    }
-    
-    // Получаем баланс фишек
+    // Получаем баланс фишек (имя уже установлено в главном меню)
     socket.emit('chips-get-balance');
+    
+    socket.on('chips-balance', (data) => {
+        if (data.playerName) {
+            playerName = data.playerName;
+        }
+    });
+    
+    // Присоединяемся к игре
+    socket.emit('rps-join', {});
 });
 
 // Обработчики событий Socket.IO

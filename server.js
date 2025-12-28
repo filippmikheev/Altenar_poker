@@ -1773,13 +1773,19 @@ io.on('connection', (socket) => {
   if (!playerChips.has(socket.id)) {
     playerChips.set(socket.id, {
       balance: 0, // Начальный баланс 0 - нужно купить фишки
-      playerName: null
+      playerName: null,
+      needsName: true // Нужно ввести имя
     });
   }
 
-  // Отправляем баланс при подключении
+  // Отправляем состояние при подключении
   const chipsData = playerChips.get(socket.id);
-  socket.emit('chips-balance', { balance: chipsData.balance, needsPurchase: chipsData.balance === 0 });
+  socket.emit('chips-balance', { 
+    balance: chipsData.balance, 
+    needsPurchase: chipsData.balance === 0,
+    needsName: chipsData.playerName === null || !chipsData.playerName,
+    playerName: chipsData.playerName || null
+  });
 
   // Отправляем список комнат при подключении
   socket.emit('roomsList', getRoomsList());
@@ -2232,22 +2238,21 @@ io.on('connection', (socket) => {
 
   // ====== СЛОТ-МАШИНА ======
   socket.on('slots-join', (data) => {
-    const { playerName } = data;
-    if (!playerName) {
-      socket.emit('slots-error', 'Введите ваше имя');
+    // Получаем имя и баланс из системы фишек
+    const chipsData = playerChips.get(socket.id);
+    if (!chipsData || !chipsData.playerName) {
+      socket.emit('slots-error', 'Сначала введите ваше имя в главном меню');
       return;
     }
     
-    // Получаем баланс фишек
-    const chipsData = playerChips.get(socket.id);
-    if (!chipsData || chipsData.balance === 0) {
+    if (!chipsData.balance || chipsData.balance === 0) {
       socket.emit('slots-error', 'Сначала купите фишки в главном меню');
       return;
     }
     
     let game = slotsGames.get(socket.id);
     if (!game) {
-      game = new SlotsGame(socket.id, playerName);
+      game = new SlotsGame(socket.id, chipsData.playerName);
       game.balance = chipsData.balance;
       slotsGames.set(socket.id, game);
     } else {
@@ -2303,22 +2308,21 @@ io.on('connection', (socket) => {
 
   // ====== КАМЕНЬ-НОЖНИЦЫ-БУМАГА ======
   socket.on('rps-join', (data) => {
-    const { playerName } = data;
-    if (!playerName) {
-      socket.emit('rps-error', 'Введите ваше имя');
+    // Получаем имя и баланс из системы фишек
+    const chipsData = playerChips.get(socket.id);
+    if (!chipsData || !chipsData.playerName) {
+      socket.emit('rps-error', 'Сначала введите ваше имя в главном меню');
       return;
     }
     
-    // Получаем баланс фишек
-    const chipsData = playerChips.get(socket.id);
-    if (!chipsData || chipsData.balance === 0) {
+    if (!chipsData.balance || chipsData.balance === 0) {
       socket.emit('rps-error', 'Сначала купите фишки в главном меню');
       return;
     }
     
     let game = rpsGames.get(socket.id);
     if (!game) {
-      game = new RPSGame(socket.id, playerName);
+      game = new RPSGame(socket.id, chipsData.playerName);
       game.balance = chipsData.balance;
       rpsGames.set(socket.id, game);
     } else {
@@ -2394,7 +2398,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('blackjack-multi-join', (data) => {
-    const { roomId, playerName } = data;
+    const { roomId } = data;
     const game = blackjackRooms.get(roomId);
     
     if (!game) {
@@ -2402,14 +2406,19 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Проверяем баланс фишек
+    // Получаем имя и баланс из системы фишек
     const chipsData = playerChips.get(socket.id);
-    if (!chipsData || chipsData.balance === 0) {
+    if (!chipsData || !chipsData.playerName) {
+      socket.emit('blackjack-multi-error', 'Сначала введите ваше имя в главном меню');
+      return;
+    }
+    
+    if (!chipsData.balance || chipsData.balance === 0) {
       socket.emit('blackjack-multi-error', 'Сначала купите фишки в главном меню');
       return;
     }
     
-    if (game.addPlayer(socket.id, playerName)) {
+    if (game.addPlayer(socket.id, chipsData.playerName)) {
       // Устанавливаем баланс из фишек
       const player = game.players.find(p => p.id === socket.id);
       if (player) {
@@ -2552,6 +2561,13 @@ io.on('connection', (socket) => {
     coinflipGames.delete(socket.id);
     slotsGames.delete(socket.id);
     rpsGames.delete(socket.id);
+    
+    // Удаляем имя из списка активных
+    const chipsData = playerChips.get(socket.id);
+    if (chipsData && chipsData.playerName) {
+      activePlayerNames.delete(chipsData.playerName);
+    }
+    playerChips.delete(socket.id);
     
     // Удаляем из Black Jack мультиплеер комнат
     blackjackRooms.forEach((game, roomId) => {

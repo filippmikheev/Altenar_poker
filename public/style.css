@@ -1822,6 +1822,33 @@ body {
     background: rgba(255, 255, 255, 0.15);
 }
 
+.name-input-section {
+    margin-bottom: 20px;
+}
+
+.name-input-section input {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.2em;
+    border: 2px solid var(--gold);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--white);
+    text-align: center;
+    min-height: 50px;
+}
+
+.name-input-section input:focus {
+    outline: none;
+    border-color: var(--felt-light);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.error-message {
+    font-size: 0.9em;
+    text-align: center;
+}
+
 .current-balance {
     font-size: 1.2em;
     color: var(--gold);
